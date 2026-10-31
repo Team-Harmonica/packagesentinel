@@ -2,10 +2,12 @@
 
 from datetime import datetime, timezone
 import pytest
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import uuid4
 
 from app.database import repository
+from app.database.models import PackageVersion
 from app.schemas.finding import Finding, Severity
 
 
@@ -22,14 +24,81 @@ async def test_package_and_version_creation(db_session: AsyncSession):
     assert pkg_same.id == pkg.id
 
     # Create version
-    v1 = await repository.get_or_create_package_version(db_session, pkg.id, "4.17.21")
+    v1 = await repository.get_or_create_package_version(
+        db_session,
+        pkg.id,
+        "4.17.21",
+        archive_hash="first-hash",
+    )
     assert v1.id is not None
     assert v1.package_id == pkg.id
     assert v1.version == "4.17.21"
+    assert v1.archive_hash == "first-hash"
 
     # Idempotent version lookup
-    v1_same = await repository.get_or_create_package_version(db_session, pkg.id, "4.17.21")
+    v1_same = await repository.get_or_create_package_version(
+        db_session,
+        pkg.id,
+        "4.17.21",
+        archive_hash="first-hash",
+    )
     assert v1_same.id == v1.id
+    version_count = await db_session.scalar(
+        select(func.count()).select_from(PackageVersion).where(
+            PackageVersion.package_id == pkg.id,
+            PackageVersion.version == "4.17.21",
+        )
+    )
+    assert version_count == 1
+
+
+@pytest.mark.asyncio
+async def test_existing_package_version_archive_hash_is_updated(db_session: AsyncSession):
+    pkg = await repository.get_or_create_package(db_session, "hash-update", "npm")
+    version = await repository.get_or_create_package_version(
+        db_session,
+        pkg.id,
+        "1.0.0",
+        archive_hash="old-hash",
+    )
+
+    updated = await repository.get_or_create_package_version(
+        db_session,
+        pkg.id,
+        "1.0.0",
+        archive_hash="new-hash",
+    )
+
+    assert updated.id == version.id
+    assert updated.package_id == pkg.id
+    assert updated.archive_hash == "new-hash"
+    version_count = await db_session.scalar(
+        select(func.count()).select_from(PackageVersion).where(
+            PackageVersion.package_id == pkg.id,
+            PackageVersion.version == "1.0.0",
+        )
+    )
+    assert version_count == 1
+
+
+@pytest.mark.asyncio
+async def test_missing_archive_hash_does_not_clear_existing_hash(db_session: AsyncSession):
+    pkg = await repository.get_or_create_package(db_session, "hash-preserve", "pypi")
+    version = await repository.get_or_create_package_version(
+        db_session,
+        pkg.id,
+        "2.0.0",
+        archive_hash="known-hash",
+    )
+
+    fetched = await repository.get_or_create_package_version(
+        db_session,
+        pkg.id,
+        "2.0.0",
+    )
+
+    assert fetched.id == version.id
+    assert fetched.archive_hash == "known-hash"
 
 
 @pytest.mark.asyncio

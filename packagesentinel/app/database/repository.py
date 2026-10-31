@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 from uuid import UUID, uuid4
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -42,7 +43,12 @@ async def get_or_create_package_version(
     version: str,
     archive_hash: Optional[str] = None,
 ) -> PackageVersion:
-    """Find an existing package version or create a new one."""
+    """Find or create a package version and persist any newly acquired hash.
+
+    The unique package/version constraint remains the source of truth when
+    concurrent requests attempt to create the same version. A savepoint lets
+    the losing request recover without rolling back its surrounding work.
+    """
     stmt = select(PackageVersion).where(
         PackageVersion.package_id == package_id,
         PackageVersion.version == version,
@@ -50,14 +56,37 @@ async def get_or_create_package_version(
     result = await session.execute(stmt)
     pkg_version = result.scalar_one_or_none()
 
-    if pkg_version is None:
-        pkg_version = PackageVersion(
-            package_id=package_id,
-            version=version,
-            archive_hash=archive_hash,
+    if pkg_version is not None:
+        if archive_hash is not None and pkg_version.archive_hash != archive_hash:
+            pkg_version.archive_hash = archive_hash
+            await session.flush()
+        return pkg_version
+
+    pkg_version = PackageVersion(
+        package_id=package_id,
+        version=version,
+        archive_hash=archive_hash,
+    )
+    try:
+        async with session.begin_nested():
+            session.add(pkg_version)
+            await session.flush()
+    except IntegrityError:
+        result = await session.execute(stmt)
+        pkg_version = result.scalar_one_or_none()
+        if pkg_version is None:
+            raise
+
+        if archive_hash is not None and pkg_version.archive_hash != archive_hash:
+            pkg_version.archive_hash = archive_hash
+            await session.flush()
+
+        logger.debug(
+            "Reused concurrently created package_version record: id=%s for version=%s",
+            pkg_version.id,
+            version,
         )
-        session.add(pkg_version)
-        await session.flush()
+    else:
         logger.debug("Created package_version record: id=%s for version=%s", pkg_version.id, version)
 
     return pkg_version
