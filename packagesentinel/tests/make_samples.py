@@ -43,7 +43,7 @@ def glassworm_demo() -> None:
     write(d / "package.json", json.dumps({
         "name": "glassworm-demo",
         "version": "1.0.0",
-        "description": "Harmonica test fixture (inert). Mimics a GlassWorm loader.",
+        "description": "PackageSentinel test fixture (inert). Mimics a GlassWorm loader.",
         "main": "index.js",
         "license": "MIT",
     }, indent=2) + "\n")
@@ -51,11 +51,11 @@ def glassworm_demo() -> None:
     # The payload references credential paths so code_scan has something to
     # find once it rescans the decoded text, but all it does is log a string.
     payload = (
-        'console.log("[harmonica fixture] hidden code ran. A real worm would now read " '
+        'console.log("[PackageSentinel fixture] hidden code ran. A real worm would now read " '
         '+ require("os").homedir() + "/.ssh/id_rsa and POST it to https://exfil.invalid/");'
     )
     write(d / "index.js", (
-        "// HARMONICA TEST FIXTURE: inert. Copies the GlassWorm loader shape.\n"
+        "// PACKAGESENTINEL TEST FIXTURE: inert. Copies the GlassWorm loader shape.\n"
         "// The string below looks empty in every editor. It is not.\n"
         "\n"
         f'const settings = "{vs_encode(payload)}";\n'
@@ -72,15 +72,15 @@ def glassworm_demo() -> None:
 
     # Tag characters hidden at the end of an innocent comment (never executed).
     write(d / "lib" / "config.py", (
-        "# HARMONICA TEST FIXTURE: inert.\n"
-        f"# default settings{tag_encode('import os; os.system(\"echo harmonica-fixture\")')}\n"
+        "# PACKAGESENTINEL TEST FIXTURE: inert.\n"
+        f"# default settings{tag_encode('import os; os.system(\"echo packagesentinel-fixture\")')}\n"
         "DEBUG = False\n"
     ))
 
     # Zero-width binary text in prose: not code, so this should stay low severity.
     write(d / "README.md", (
         "# glassworm-demo\n\n"
-        f"Harmonica test fixture.{zw_encode('fixture watermark 42')} Do not install.\n"
+        f"PackageSentinel test fixture.{zw_encode('fixture watermark 42')} Do not install.\n"
     ))
 
 
@@ -90,7 +90,7 @@ def emoji_utils() -> None:
     write(d / "package.json", json.dumps({
         "name": "emoji-utils",
         "version": "2.1.0",
-        "description": "Harmonica test fixture (benign): legit Unicode that must not flag.",
+        "description": "PackageSentinel test fixture (benign): legit Unicode that must not flag.",
         "main": "index.js",
         "license": "MIT",
     }, indent=2) + "\n")

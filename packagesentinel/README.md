@@ -16,13 +16,18 @@ as data and does not execute them. Registry download/archive acquisition is not
 wired into the API yet, so API scan reports mark static analysis unavailable
 and report incomplete coverage rather than implying that a package is safe.
 
-Hook, metadata, and typosquatting checks are not yet implemented and are not
-registered as active checks.
-Typosquat and metadata flags from a frontend remain deferred until that
-frontend request contract is available. The local CLI includes scoring,
-evaluation, calibration, and directory-diff tools; score/verdict output is not
-part of the API report contract. The CLI's capability-profile builder remains
-a stub, so its capability and mismatch summaries are currently empty.
+The scanner includes an offline typosquatting signal for names one edit or
+adjacent transposition away from a curated set of popular npm/PyPI packages,
+and for names using common confusable characters. It requires the requested
+package's `name` and `ecosystem` in scanner metadata; the reference list is
+intentionally finite and is not a registry-wide typosquatting service. Hook
+The API runs this name-only check from the scan request without downloaded
+package contents. Hook and broader metadata checks are not implemented.
+Frontend-provided flags remain deferred until that request contract is
+available. The local CLI includes scoring, evaluation, calibration, and
+directory-diff tools; score/verdict output is not part of the API report
+contract. The CLI's capability-profile builder remains a stub, so its
+capability and mismatch summaries are currently empty.
 
 ## Setup
 

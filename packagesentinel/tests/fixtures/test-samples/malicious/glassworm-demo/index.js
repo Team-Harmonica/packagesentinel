@@ -1,7 +1,7 @@
-// HARMONICA TEST FIXTURE: inert. Copies the GlassWorm loader shape.
+// PACKAGESENTINEL TEST FIXTURE: inert. Copies the GlassWorm loader shape.
 // The string below looks empty in every editor. It is not.
 
-const settings = "󠅓󠅟󠅞󠅣󠅟󠅜󠅕󠄞󠅜󠅟󠅗󠄘󠄒󠅋󠅘󠅑󠅢󠅝󠅟󠅞󠅙󠅓󠅑󠄐󠅖󠅙󠅨󠅤󠅥󠅢󠅕󠅍󠄐󠅘󠅙󠅔󠅔󠅕󠅞󠄐󠅓󠅟󠅔󠅕󠄐󠅢󠅑󠅞󠄞󠄐󠄱󠄐󠅢󠅕󠅑󠅜󠄐󠅧󠅟󠅢󠅝󠄐󠅧󠅟󠅥󠅜󠅔󠄐󠅞󠅟󠅧󠄐󠅢󠅕󠅑󠅔󠄐󠄒󠄐󠄛󠄐󠅢󠅕󠅡󠅥󠅙󠅢󠅕󠄘󠄒󠅟󠅣󠄒󠄙󠄞󠅘󠅟󠅝󠅕󠅔󠅙󠅢󠄘󠄙󠄐󠄛󠄐󠄒󠄟󠄞󠅣󠅣󠅘󠄟󠅙󠅔󠅏󠅢󠅣󠅑󠄐󠅑󠅞󠅔󠄐󠅀󠄿󠅃󠅄󠄐󠅙󠅤󠄐󠅤󠅟󠄐󠅘󠅤󠅤󠅠󠅣󠄪󠄟󠄟󠅕󠅨󠅖󠅙󠅜󠄞󠅙󠅞󠅦󠅑󠅜󠅙󠅔󠄟󠄒󠄙󠄫";
+const settings = "󠅓󠅟󠅞󠅣󠅟󠅜󠅕󠄞󠅜󠅟󠅗󠄘󠄒󠅋󠅀󠅑󠅓󠅛󠅑󠅗󠅕󠅃󠅕󠅞󠅤󠅙󠅞󠅕󠅜󠄐󠅖󠅙󠅨󠅤󠅥󠅢󠅕󠅍󠄐󠅘󠅙󠅔󠅔󠅕󠅞󠄐󠅓󠅟󠅔󠅕󠄐󠅢󠅑󠅞󠄞󠄐󠄱󠄐󠅢󠅕󠅑󠅜󠄐󠅧󠅟󠅢󠅝󠄐󠅧󠅟󠅥󠅜󠅔󠄐󠅞󠅟󠅧󠄐󠅢󠅕󠅑󠅔󠄐󠄒󠄐󠄛󠄐󠅢󠅕󠅡󠅥󠅙󠅢󠅕󠄘󠄒󠅟󠅣󠄒󠄙󠄞󠅘󠅟󠅝󠅕󠅔󠅙󠅢󠄘󠄙󠄐󠄛󠄐󠄒󠄟󠄞󠅣󠅣󠅘󠄟󠅙󠅔󠅏󠅢󠅣󠅑󠄐󠅑󠅞󠅔󠄐󠅀󠄿󠅃󠅄󠄐󠅙󠅤󠄐󠅤󠅟󠄐󠅘󠅤󠅤󠅠󠅣󠄪󠄟󠄟󠅕󠅨󠅖󠅙󠅜󠄞󠅙󠅞󠅦󠅑󠅜󠅙󠅔󠄟󠄒󠄙󠄫";
 
 const s = (v) => [...v].map((c) => {
   const p = c.codePointAt(0);

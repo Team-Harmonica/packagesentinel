@@ -1,4 +1,4 @@
-// HARMONICA TEST FIXTURE: inert. Copies the SHAPE of a credential stealer so the
+// PACKAGESENTINEL TEST FIXTURE: inert. Copies the SHAPE of a credential stealer so the
 // detectors have something to find. main() is never called, the webhook is on the
 // reserved .invalid TLD, and 203.0.113.0/24 is a documentation range (RFC 5737).
 const fs = require("fs");

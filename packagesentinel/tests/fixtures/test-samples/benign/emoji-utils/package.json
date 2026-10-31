@@ -1,7 +1,7 @@
 {
   "name": "emoji-utils",
   "version": "2.1.0",
-  "description": "Harmonica test fixture (benign): legit Unicode that must not flag.",
+  "description": "PackageSentinel test fixture (benign): legit Unicode that must not flag.",
   "main": "index.js",
   "license": "MIT"
 }

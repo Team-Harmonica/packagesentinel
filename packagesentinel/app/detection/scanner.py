@@ -74,17 +74,18 @@ def rel(path: Path, pkg_dir: Path | str) -> str:
 def _check_groups() -> list[tuple[str, list[tuple[str, Check]]]]:
     # Imported here so check modules can import Finding from this module
     # without a circular import.
-    from . import code_scan, glassworm, stego
+    from . import code_scan, glassworm, stego, typosquat
 
     return [
-        # Group I: raw bytes, before anything tokenizes or normalizes the text
         ("raw", [
             ("glassworm", glassworm.check),
             ("stego", stego.check),
         ]),
-        # Group II: parsed code
         ("code", [
             ("code_scan", code_scan.check),
+        ]),
+        ("meta", [
+            ("typosquat", typosquat.check),
         ]),
     ]
 
@@ -100,7 +101,7 @@ def run_scanner(pkg_dir: Path | str, meta: dict | None = None) -> list[Finding]:
         for name, check in checks:
             try:
                 findings.extend(check(pkg_dir, meta))
-            except Exception as exc:  # one broken check must not sink the scan
+            except Exception as exc:
                 findings.append(Finding(
                     check=name,
                     severity="info",

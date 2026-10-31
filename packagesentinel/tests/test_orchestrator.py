@@ -24,8 +24,9 @@ async def test_orchestrator_reports_unavailable_package_contents(db_session: Asy
 
     assert report.scan_id == scan.id
     assert report.analysis_complete is False
-    assert report.compatibility_profile.coverage == 0.0
+    assert report.compatibility_profile.coverage == 25.0
     assert report.compatibility_profile.stages["static_analysis"] == "not_available"
+    assert report.compatibility_profile.stages["metadata_analysis"] == "completed"
     assert "package contents" in report.analyzer_errors["static_analysis"].lower()
     assert report.findings == []
     assert "incomplete" in report.summary.lower()
@@ -35,3 +36,32 @@ async def test_orchestrator_reports_unavailable_package_contents(db_session: Asy
     assert saved.status == "completed"
     assert saved.summary == report.summary
     assert saved.findings == []
+
+
+@pytest.mark.asyncio
+async def test_orchestrator_persists_typosquat_finding_without_contents(
+    db_session: AsyncSession,
+):
+    pkg = await repository.get_or_create_package(db_session, "reqeusts", "pypi")
+    version = await repository.get_or_create_package_version(db_session, pkg.id, "1.0.0")
+    scan = await repository.create_scan(db_session, version.id)
+    await db_session.commit()
+
+    request = PackageRequest(
+        ecosystem=Ecosystem.PYPI,
+        name="reqeusts",
+        version="1.0.0",
+    )
+    report = await ScanOrchestrator().execute_scan(db_session, scan.id, request)
+
+    assert report.analysis_complete is False
+    assert report.compatibility_profile.stages["metadata_analysis"] == "completed"
+    assert report.compatibility_profile.stages["static_analysis"] == "not_available"
+    assert len(report.findings) == 1
+    assert report.findings[0].category == "typosquatting"
+    assert "requests" in report.findings[0].evidence
+
+    saved = await repository.get_scan_with_findings(db_session, scan.id)
+    assert saved is not None
+    assert len(saved.findings) == 1
+    assert saved.findings[0].category == "typosquatting"

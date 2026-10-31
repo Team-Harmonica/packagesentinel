@@ -74,11 +74,12 @@ class ReportGenerator:
             )
 
         # Check if all available stages finished successfully
-        analysis_complete = all(
-            status in ("completed", "not_available", "skipped")
-            for status in analyzer_execution_statuses.values()
-        ) and any(
-            status == "completed" for status in analyzer_execution_statuses.values()
+        analysis_complete = (
+            analyzer_execution_statuses.get("static_analysis") == "completed"
+            and all(
+                status in ("completed", "not_available", "skipped")
+                for status in analyzer_execution_statuses.values()
+            )
         )
         summary = custom_summary or self.build_summary(
             package=package,

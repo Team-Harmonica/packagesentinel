@@ -62,6 +62,7 @@ class PackageContentAnalyzer(BaseAnalyzer):
         "glassworm": "obfuscation",
         "trojan_source_bidi": "obfuscation",
         "stego": "steganography",
+        "typosquat": "typosquatting",
         "capability": "capability_profile",
     }
     SEVERITY_BY_DETECTOR = {
@@ -76,17 +77,21 @@ class PackageContentAnalyzer(BaseAnalyzer):
     }
 
     @classmethod
-    def _convert_finding(cls, item: DetectorFinding) -> Finding:
+    def _convert_finding(
+        cls,
+        item: DetectorFinding,
+        source: str = "packagesentinel_static",
+    ) -> Finding:
         location = re.match(r"^(.*?):(\d+)(?::\d+)?(?: \(.*\))?$", item.location)
         return Finding(
-            rule_id=f"HARMONICA-{item.check.upper()}",
+            rule_id=f"PACKAGESENTINEL-{item.check.upper()}",
             category=cls.CATEGORY_BY_CHECK.get(item.check, item.check),
             severity=cls.SEVERITY_BY_DETECTOR[item.severity],
             confidence=cls.CONFIDENCE_BY_DETECTOR[item.severity],
             file=location.group(1) if location else item.location or None,
             line=int(location.group(2)) if location else None,
             evidence=item.message,
-            source="harmonica_static",
+            source=source,
             metadata={
                 "detector": item.check,
                 "detector_weight": item.weight,
@@ -103,3 +108,30 @@ class PackageContentAnalyzer(BaseAnalyzer):
             cls._convert_finding(item)
             for item in run_scanner(package_dir, metadata or {})
         ]
+
+
+class PackageIdentityAnalyzer(BaseAnalyzer):
+    """Run package-name checks that do not require downloaded package contents."""
+
+    name = "package_identity"
+    stage_key = "metadata_analysis"
+
+    async def analyze(self, package: PackageRequest) -> AnalyzerResult:
+        from app.detection.typosquat import check
+
+        metadata = {
+            "ecosystem": package.ecosystem.value,
+            "name": package.name,
+        }
+        detector_findings = check(Path(), metadata)
+        findings = [
+            PackageContentAnalyzer._convert_finding(item, source=self.stage_key)
+            for item in detector_findings
+        ]
+        return AnalyzerResult(
+            analyzer_name=self.name,
+            stage_key=self.stage_key,
+            status=AnalyzerStatus.COMPLETED,
+            findings=findings,
+            metadata=metadata,
+        )

@@ -193,7 +193,7 @@ class Samples(unittest.TestCase):
             self.ROOT / "malicious" / "fake-stealer"
         )
         self.assertTrue(findings)
-        self.assertTrue(all(f.source == "harmonica_static" for f in findings))
+        self.assertTrue(all(f.source == "packagesentinel_static" for f in findings))
         self.assertTrue(all(f.confidence > 0 for f in findings))
 
     def test_steganography_detector_is_adapted_to_typed_findings(self):
@@ -203,7 +203,7 @@ class Samples(unittest.TestCase):
 
         [finding] = [item for item in findings if item.metadata["detector"] == "stego"]
         self.assertEqual(finding.category, "steganography")
-        self.assertEqual(finding.source, "harmonica_static")
+        self.assertEqual(finding.source, "packagesentinel_static")
 
     def test_trojan_source_finding_is_adapted(self):
         with tempfile.TemporaryDirectory() as directory:
