@@ -311,21 +311,45 @@ $('file').addEventListener('change',function(e){pick(e.target.files[0])});
 ['dragenter','dragover'].forEach(function(n){$('drop').addEventListener(n,function(e){e.preventDefault();$('drop').classList.add('over')})});
 ['dragleave','drop'].forEach(function(n){$('drop').addEventListener(n,function(e){e.preventDefault();$('drop').classList.remove('over');if(n=='drop')pick(e.dataTransfer.files[0])})});
 $('up').addEventListener('click',function(){
-  if(!ready()||working)return;setWorking(true);last=0;$('res').className='res';$('modsec').hidden=true;$('prog').hidden=false;$('pfill').style.width='0%';
-  Engine().start(ident(),{
-    progress:function(pr,i){last=pr;var p=Math.floor(pr*100),k=Math.min(5,Math.floor(pr*6));
-      $('pfill').style.width=pr*100+'%';$('pb').setAttribute('aria-valuenow',p);$('ppct').textContent=p+'%';
-      if(i.label){$('pmb').textContent=i.label;$('peta').textContent=Math.floor(i.elapsed)+' s elapsed';$('st').innerHTML='Analysing: '+esc(i.label.toLowerCase())+'<span class="dots"></span>';return}
-      $('pmb').textContent=(pr*i.mb).toFixed(1)+' of '+i.mb.toFixed(1)+' MB at '+CFG.mbPerMin+' MB/min';
-      $('peta').textContent=fmt(i.total*(1-pr))+' left';
-      $('st').innerHTML='Analysing: '+STEP[k]+'<span class="dots"></span>'},
-    done:function(r){setWorking(false);$('st').textContent='All done.';show(r)},
-    error:function(e){setWorking(false);$('prog').hidden=true;$('st').textContent=(e&&e.detail)||'Something went wrong.'}});
+  if(working)return;
+  if(typeof file==='undefined'||!file){$('st').textContent='Pick or drop a package file first.';return;}
+  setWorking(true);last=0;$('res').className='res';$('modsec').hidden=true;$('prog').hidden=false;$('pfill').style.width='25%';
+  $('st').innerHTML='Scanning<span class="dots"></span>';
+  var fd=new FormData();fd.append('file',file);fd.append('ecosystem',$('eco').value||'npm');
+  var base=(typeof window!=='undefined'&&window.SENTINEL_API_URL)||'http://localhost:8000';
+  fetch(base+'/scan',{method:'POST',body:fd})
+    .then(function(res){if(!res.ok)return res.json().then(function(e){throw new Error((e&&e.detail)||res.statusText);},function(){throw new Error('HTTP '+res.status);});return res.json();})
+    .then(function(v){$('pfill').style.width='100%';setWorking(false);$('prog').hidden=true;$('st').textContent='All done.';var m=mapVerdict(v);show(m);folders(m);})
+    .catch(function(err){setWorking(false);$('prog').hidden=true;$('st').textContent=(err&&err.message)||'Scan failed. Is the server running on :8000?';});
 });
 $('stop').addEventListener('click',function(){Engine().stop();window.dispatchEvent(new CustomEvent('sentinel:stop',{detail:{file:file&&file.name,progress:last}}));
   setWorking(false);$('st').textContent='Stopped at '+Math.floor(last*100)+'%. The scan may still finish on the server, but no verdict is shown.'});
 
 /* ---------- final verdict ---------- */
+
+/* ---------- real backend adapter (added) ---------- */
+function _sevRank(s){return s==='malicious'?2:s==='suspicious'?1:0;}
+function _pretty(k){return ({network_exfil:'Network / exfiltration',credential_access:'Credential access',obfuscation:'Obfuscation',dynamic_fetch:'Dynamic code',dangerous_call:'Dangerous calls',glassworm:'Invisible Unicode',stego:'Steganography',typosquat:'Typosquatting',metadata:'Metadata'})[k]||k;}
+function mapVerdict(v){
+  var ov={safe:0,suspicious:1,malicious:2}[v.band];
+  var rating=Math.max(0,Math.min(10,(100-v.score)/10));
+  var g={};
+  (v.findings||[]).forEach(function(f){
+    if(f.check==='capability')return;
+    if(!g[f.check])g[f.check]={name:_pretty(f.check),items:[],worst:'info'};
+    g[f.check].items.push(f);
+    if(_sevRank(f.severity)>_sevRank(g[f.check].worst))g[f.check].worst=f.severity;
+  });
+  var mods=Object.keys(g).map(function(k){
+    var grp=g[k],vv=_sevRank(grp.worst);
+    return{name:grp.name,v:vv,note:grp.items.map(function(f){return f.message;}).join(' '),
+      score:Math.min(100,grp.items.reduce(function(a,f){return a+(f.weight||0);},0)),
+      short:grp.items.length+(grp.items.length===1?' finding':' findings')};
+  });
+  if(!mods.length)mods=[{name:'No issues found',v:0,note:'The scan found nothing suspicious.',score:0,short:'clean'}];
+  return{rating:rating,ov:ov,mods:mods,caveat:v.score>=50?'Do not install this package.':(v.score>=24?'Review this before installing.':null)};
+}
+
 function show(r){
   var lab=r.rating>=7.5?'Looks clean':r.rating>=5?'Mixed, worth a look':'Stay away',on=Math.round(r.rating),c=r.rating>=7.5?col[0]:r.rating>=5?col[1]:col[2],reeds='';
   for(var i=0;i<10;i++)reeds+='<rect class="rd" x="'+(76+i*46)+'" y="90" width="34" height="34" rx="3" style="transition-delay:'+(i*90+400)+'ms"/>';
