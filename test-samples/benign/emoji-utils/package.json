@@ -1,0 +1,7 @@
+{
+  "name": "emoji-utils",
+  "version": "2.1.0",
+  "description": "PkgSentinel test fixture (benign): legit Unicode that must not flag.",
+  "main": "index.js",
+  "license": "MIT"
+}

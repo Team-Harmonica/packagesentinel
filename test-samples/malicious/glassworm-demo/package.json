@@ -1,0 +1,7 @@
+{
+  "name": "glassworm-demo",
+  "version": "1.0.0",
+  "description": "PkgSentinel test fixture (inert). Mimics a GlassWorm loader.",
+  "main": "index.js",
+  "license": "MIT"
+}

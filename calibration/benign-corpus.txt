@@ -1,0 +1,26 @@
+# Benign calibration corpus for `python -m harmonica calibrate` and `python -m harmonica eval`.
+#
+# One root per line. Each root is split into package-sized units: its children,
+# with node_modules/, site-packages/ and @scope/ directories expanded. Globs
+# (*, **) are allowed. Missing paths are skipped, so it's fine to keep lines for
+# other teammates' machines here. Nothing in these folders is ever executed.
+#
+# @stdlib and @site-packages resolve to the running Python's directories.
+
+@stdlib
+@site-packages
+
+# npm itself and its dependencies
+/usr/lib/node_modules*/npm/node_modules
+
+# VS Code (incl. GitHub Copilot) and its extensions
+/usr/share/code/resources/app/node_modules
+/usr/share/code/resources/app/node_modules.asar.unpacked
+/usr/share/code/resources/app/extensions
+
+# Electron apps installed via Flatpak: Obsidian, Signal, Discord, ...
+/var/lib/flatpak/app/*/x86_64/stable/*/files/**/node_modules
+
+# macOS / other distros (skipped when absent)
+/usr/local/lib/node_modules
+/opt/homebrew/lib/node_modules
