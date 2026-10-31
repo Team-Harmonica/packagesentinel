@@ -110,3 +110,7 @@ def main(argv: list[str] | None = None) -> int:
         sp.set_defaults(fn=fn)
     args = p.parse_args(argv)
     return args.fn(args)
+
+
+if __name__ == "__main__":
+    sys.exit(main())
