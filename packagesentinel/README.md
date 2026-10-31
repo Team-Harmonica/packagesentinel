@@ -48,6 +48,24 @@ findings = PackageContentAnalyzer.analyze_directory("/path/to/unpacked/package")
 
 Package files are read as data; the scanner does not execute package code.
 
+## Acquisition contract
+
+Acquisition implementations share `app.acquisition.contracts`. An
+`AcquiredPackage` identifies the requested package and version, its extracted
+directory, the original archive's SHA-256, normalized registry metadata,
+non-fatal warnings, and structured `SkippedFile` entries. The metadata is a
+registry-independent dictionary; acquisition implementations should normalize
+registry responses before returning it.
+
+The acquirer creates and initially owns a `TemporaryDirectory`, then transfers
+its handle with the returned artifact. The caller owns cleanup after receiving
+the artifact and must call `artifact.cleanup()` in a `finally` block after
+analysis. The extracted directory must be inside that temporary directory.
+Acquisition failures raise `AcquisitionError` or one of its specific
+subclasses: `PackageNotFoundError`, `VersionNotFoundError`, `RegistryError`,
+`ArchiveValidationError`, or `ExtractionError`; failures must not be returned
+as incomplete artifacts.
+
 ## Tests
 
 ```bash
