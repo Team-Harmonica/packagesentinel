@@ -1,0 +1,15 @@
+# PackageSentinel Backend Core Dependencies
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+pydantic>=2.7.0
+pydantic-settings>=2.2.0
+sqlalchemy[asyncio]>=2.0.30
+greenlet>=3.0.0
+psycopg[binary]>=3.1.18
+aiosqlite>=0.20.0
+
+# Testing and HTTP Client
+httpx>=0.27.0
+pytest>=8.0.0
+pytest-asyncio>=0.23.0
+

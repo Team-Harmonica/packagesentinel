@@ -17,8 +17,8 @@ JavaScript uses a small lexer that strips comments and separates string
 literals from code, so `// eval(x)` and `"eval is evil"` never match a sink.
 
 Every file also reports which capabilities it uses (network / process /
-filesystem / env / dynamic-code). These become one weight-0 `capability`
-finding per bucket for profile.py.
+filesystem / env / dynamic-code). These become one weight-0 `capability` finding per bucket for the
+compatibility profile.
 
 scan_source() is the single-text entry point; glassworm uses it to rescan
 payloads decoded from invisible Unicode, and this module uses it recursively

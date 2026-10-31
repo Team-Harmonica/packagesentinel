@@ -5,9 +5,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from harmonica import code_scan  # noqa: E402
-from harmonica.scanner import run_scanner  # noqa: E402
-from harmonica.scoring import build_verdict  # noqa: E402
+from app.detection import code_scan  # noqa: E402
+from app.detection.analyzers import PackageContentAnalyzer  # noqa: E402
+from app.detection.scanner import run_scanner  # noqa: E402
 
 
 def js(src):
@@ -164,25 +164,35 @@ class PythonDetectors(unittest.TestCase):
 
 
 class Samples(unittest.TestCase):
-    ROOT = Path(__file__).resolve().parent.parent / "test-samples"
+    ROOT = Path(__file__).resolve().parent / "fixtures" / "test-samples"
 
-    def band(self, *parts):
+    def findings(self, *parts):
         d = self.ROOT.joinpath(*parts)
-        return build_verdict({"name": d.name}, run_scanner(d, {}))["band"]
+        return run_scanner(d, {})
 
     def test_malicious_samples(self):
         for name in ("fake-stealer", "py-dropper", "glassworm-demo"):
             with self.subTest(name=name):
-                self.assertEqual(self.band("malicious", name), "malicious")
+                findings = self.findings("malicious", name)
+                self.assertTrue(any(f.severity == "malicious" for f in findings))
 
     def test_benign_samples(self):
         for name in ("clean-math", "emoji-utils"):
             with self.subTest(name=name):
-                self.assertEqual(self.band("benign", name), "safe")
+                findings = self.findings("benign", name)
+                self.assertFalse(any(f.severity == "malicious" for f in findings))
 
     def test_glassworm_payload_is_rescanned(self):
         fs = run_scanner(self.ROOT / "malicious" / "glassworm-demo", {})
         self.assertTrue(any(f.message.startswith("[inside hidden payload]") for f in fs))
+
+    def test_package_sentinel_adapter_returns_typed_findings(self):
+        findings = PackageContentAnalyzer.analyze_directory(
+            self.ROOT / "malicious" / "fake-stealer"
+        )
+        self.assertTrue(findings)
+        self.assertTrue(all(f.source == "harmonica_static" for f in findings))
+        self.assertTrue(all(f.confidence > 0 for f in findings))
 
 
 if __name__ == "__main__":
