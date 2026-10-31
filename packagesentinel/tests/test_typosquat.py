@@ -9,10 +9,11 @@ from app.detection.typosquat import check
 
 class TyposquatDetectorTests(unittest.IsolatedAsyncioTestCase):
     def test_detects_single_edit_in_pypi_package_name(self):
+        # Popularity guard: similarity is confirmed by a weak signal (low downloads).
         with tempfile.TemporaryDirectory() as directory:
             [finding] = check(
                 Path(directory),
-                {"ecosystem": "pypi", "name": "reqeusts"},
+                {"ecosystem": "pypi", "name": "reqeusts", "downloads": 12},
             )
 
         self.assertEqual(finding.check, "typosquat")
@@ -77,7 +78,7 @@ class TyposquatDetectorTests(unittest.IsolatedAsyncioTestCase):
 
     def test_scanner_registers_and_adapter_normalizes_finding(self):
         with tempfile.TemporaryDirectory() as directory:
-            metadata = {"ecosystem": "pypi", "name": "reqeusts"}
+            metadata = {"ecosystem": "pypi", "name": "reqeusts", "downloads": 12}
             detector_findings = run_scanner(directory, metadata)
             findings = PackageContentAnalyzer.analyze_directory(directory, metadata)
 
