@@ -5,9 +5,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from harmonica import code_scan  # noqa: E402
-from harmonica.scanner import run_scanner  # noqa: E402
-from harmonica.scoring import build_verdict  # noqa: E402
+from app.detection import code_scan  # noqa: E402
+from app.detection.scanner import run_scanner  # noqa: E402
+from app.detection.scoring import build_verdict  # noqa: E402
 
 
 def js(src):
@@ -135,7 +135,7 @@ class CrossFile(unittest.TestCase):
         # looks ordinary, so no dynamic_fetch finding fires. Cross-file data flow would
         # need a package-level call graph: future work, not a fragile regex fix now.
         import tempfile
-        from harmonica.code_scan import check
+        from app.detection.code_scan import check
         with tempfile.TemporaryDirectory() as d:
             Path(d, "downloader.js").write_text(
                 'const fs = require("fs");\n'
@@ -183,7 +183,7 @@ class PythonDetectors(unittest.TestCase):
 
 
 class Samples(unittest.TestCase):
-    ROOT = Path(__file__).resolve().parent.parent / "test-samples"
+    ROOT = Path(__file__).resolve().parent / "fixtures" / "detection-samples"
 
     def band(self, *parts):
         d = self.ROOT.joinpath(*parts)

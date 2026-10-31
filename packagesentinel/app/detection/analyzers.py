@@ -51,7 +51,7 @@ class BaseAnalyzer:
 
 
 class PackageContentAnalyzer(BaseAnalyzer):
-    """Run the Harmonica static detectors when an unpacked directory is supplied."""
+    """Run the integrated static detectors when an unpacked directory is supplied."""
 
     CATEGORY_BY_CHECK = {
         "credential_access": "credential_access",
@@ -60,6 +60,8 @@ class PackageContentAnalyzer(BaseAnalyzer):
         "dynamic_fetch": "suspicious_execution",
         "obfuscation": "obfuscation",
         "glassworm": "obfuscation",
+        "trojan_source_bidi": "obfuscation",
+        "stego": "steganography",
         "capability": "capability_profile",
     }
     SEVERITY_BY_DETECTOR = {

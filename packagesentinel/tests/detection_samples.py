@@ -5,7 +5,7 @@ shape of a GlassWorm loader (hidden payload in an empty-looking string, a
 decoder, an eval), but the hidden payload only prints a message. Never put
 working malware in this repo.
 
-    python tools/make_samples.py
+    python -m tests.detection_samples
 """
 
 from __future__ import annotations
@@ -15,7 +15,7 @@ import struct
 import zlib
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent / "test-samples"
+ROOT = Path(__file__).resolve().parent / "fixtures" / "detection-samples"
 
 
 def vs_encode(text: str) -> str:

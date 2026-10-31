@@ -1,7 +1,7 @@
-"""resolve(pkg, ecosystem) -> (pkg_dir, meta)
+"""Read package metadata from a local, already-unpacked directory.
 
-STUB: owned by Aryan (npm/PyPI registry fetch + tarball unpack). For now it
-only accepts a local, already-unpacked directory so the pipeline runs end to end.
+Registry acquisition and archive extraction are provided by the acquisition
+service, not this local CLI helper.
 """
 
 from __future__ import annotations

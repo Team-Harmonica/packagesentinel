@@ -8,10 +8,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from harmonica import diff  # noqa: E402
-from harmonica.scanner import Finding  # noqa: E402
+from app.detection import diff  # noqa: E402
+from app.detection.scanner import Finding  # noqa: E402
 
-SAMPLES = Path(__file__).resolve().parent.parent / "test-samples" / "diff"
+SAMPLES = Path(__file__).resolve().parent / "fixtures" / "detection-samples" / "diff"
 OLD, NEW = SAMPLES / "update-demo-1.0.0", SAMPLES / "update-demo-1.0.1"
 
 EVAL_SRC = "const cp = require('child_process');\ncp.exec(userInput);\n"

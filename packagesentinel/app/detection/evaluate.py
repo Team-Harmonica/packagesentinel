@@ -1,6 +1,6 @@
 """Precision / recall harness: the headline numbers.
 
-    python -m harmonica eval [--no-corpus] [--corpus FILE] [--json]
+    packagesentinel eval [--no-corpus] [--corpus FILE] [--json]
 
 Runs the real pipeline (run_scanner + scoring with the current THRESHOLDS)
 over the labelled samples and the benign corpus, then prints precision,
@@ -23,7 +23,7 @@ BANDS = ("safe", "suspicious", "malicious")
 
 
 def main(argv: list[str] | None = None) -> int:
-    p = argparse.ArgumentParser(prog="harmonica eval", description=__doc__.split("\n\n")[0])
+    p = argparse.ArgumentParser(prog="packagesentinel eval", description=__doc__.split("\n\n")[0])
     p.add_argument("--corpus", type=Path, default=calibrate.DEFAULT_CORPUS)
     p.add_argument("--no-corpus", action="store_true", help="labelled samples only (fast)")
     p.add_argument("--workers", type=int, default=None)
@@ -57,7 +57,7 @@ def main(argv: list[str] | None = None) -> int:
 
     n_mal, n_ben = sum(matrix["malicious"].values()), sum(matrix["benign"].values())
     n_corpus = sum(r.source == "corpus" for r in ok)
-    print(f"\nPkgSentinel evaluation   thresholds {th}")
+    print(f"\nPackageSentinel evaluation   thresholds {th}")
     print(f"{n_mal} malicious packages, {n_ben} benign packages ({n_corpus} from the real-code corpus)\n")
     print("Confusion matrix (rows = truth, columns = verdict band)")
     print(f"  {'':>11} {'safe':>8} {'suspicious':>11} {'malicious':>10}")

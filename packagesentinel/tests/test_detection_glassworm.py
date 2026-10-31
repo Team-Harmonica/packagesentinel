@@ -7,9 +7,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "tools"))
 
-from harmonica import glassworm, scanner  # noqa: E402
-from harmonica.scanner import Finding, run_scanner  # noqa: E402
-from make_samples import tag_encode, vs_encode, zw_encode  # noqa: E402
+from app.detection import glassworm, scanner  # noqa: E402
+from app.detection.scanner import Finding, run_scanner  # noqa: E402
+from tests.detection_samples import tag_encode, vs_encode, zw_encode  # noqa: E402
 
 PAYLOAD = 'require("child_process").exec("id")'
 
@@ -182,7 +182,7 @@ class Spine(unittest.TestCase):
 
 
 class Fixtures(unittest.TestCase):
-    ROOT = Path(__file__).resolve().parent.parent / "test-samples"
+    ROOT = Path(__file__).resolve().parent / "fixtures" / "detection-samples"
 
     def test_glassworm_demo_is_malicious(self):
         fs = run_scanner(self.ROOT / "malicious" / "glassworm-demo", {})

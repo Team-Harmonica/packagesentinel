@@ -1,9 +1,9 @@
-"""Scanner spine for static analysis of unpacked package directories.
+"""Scanner spine: the Finding contract and the run_scanner() orchestrator.
 
 Every check is a function ``check(pkg_dir: Path, meta: dict) -> list[Finding]``.
-run_scanner() calls the integrated checks in order and concatenates the
-results. A check that raises never kills the scan; the failure is recorded as
-an ``info`` Finding so it remains visible in the report.
+run_scanner() calls the active checks in order and concatenates the results.
+A check that raises never kills the scan; the failure is recorded as an
+``info`` Finding so it is visible but does not move the score.
 
 Nothing here (or in any check) executes package code. Files are read as bytes.
 """
@@ -74,11 +74,18 @@ def rel(path: Path, pkg_dir: Path | str) -> str:
 def _check_groups() -> list[tuple[str, list[tuple[str, Check]]]]:
     # Imported here so check modules can import Finding from this module
     # without a circular import.
-    from . import code_scan, glassworm
+    from . import code_scan, glassworm, stego
 
     return [
-        ("raw", [("glassworm", glassworm.check)]),
-        ("code", [("code_scan", code_scan.check)]),
+        # Group I: raw bytes, before anything tokenizes or normalizes the text
+        ("raw", [
+            ("glassworm", glassworm.check),
+            ("stego", stego.check),
+        ]),
+        # Group II: parsed code
+        ("code", [
+            ("code_scan", code_scan.check),
+        ]),
     ]
 
 

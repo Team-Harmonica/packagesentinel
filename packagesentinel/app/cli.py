@@ -10,10 +10,10 @@ import argparse
 import json
 import sys
 
-from . import glassworm
-from .resolver import resolve
-from .scanner import run_scanner
-from .scoring import build_verdict
+from .detection import glassworm
+from .detection.resolver import resolve
+from .detection.scanner import run_scanner
+from .detection.scoring import build_verdict
 
 BAND_COLORS = {"safe": "32", "suspicious": "33", "malicious": "31"}
 SEV_COLORS = {"info": "2", "suspicious": "33", "malicious": "31"}
@@ -51,7 +51,7 @@ def cmd_check(args) -> int:
     try:
         pkg_dir, meta = resolve(args.target, args.ecosystem)
     except Exception as exc:
-        print(f"harmonica: {exc}", file=sys.stderr)
+        print(f"packagesentinel: {exc}", file=sys.stderr)
         return 2
     verdict = build_verdict(meta, run_scanner(pkg_dir, meta))
     if args.json:
@@ -65,7 +65,7 @@ def cmd_reveal(args) -> int:
     try:
         pkg_dir, _meta = resolve(args.target, args.ecosystem)
     except Exception as exc:
-        print(f"harmonica: {exc}", file=sys.stderr)
+        print(f"packagesentinel: {exc}", file=sys.stderr)
         return 2
     hits = glassworm.reveal(pkg_dir)
     if args.json:
@@ -88,23 +88,23 @@ def main(argv: list[str] | None = None) -> int:
     argv = sys.argv[1:] if argv is None else argv
     # harness commands own their own argument parsing
     if argv[:1] == ["eval"]:
-        from . import evaluate
+        from .detection import evaluate
         return evaluate.main(argv[1:])
     if argv[:1] == ["diff"]:
-        from . import diff
+        from .detection import diff
         return diff.main(argv[1:])
     if argv[:1] == ["calibrate"]:
-        from . import calibrate
+        from .detection import calibrate
         return calibrate.main(argv[1:])
 
-    p = argparse.ArgumentParser(prog="harmonica",
-                                description="PkgSentinel: static malware scanner for npm and PyPI packages.")
-    p.epilog = "also: `harmonica diff <old> <new>` (version diff), `harmonica eval` (precision/recall), `harmonica calibrate` (thresholds)"
+    p = argparse.ArgumentParser(prog="packagesentinel",
+                                description="PackageSentinel: static package analysis for npm and PyPI.")
+    p.epilog = "also: `packagesentinel diff <old> <new>` (local version diff), `packagesentinel eval` (precision/recall), `packagesentinel calibrate` (thresholds)"
     sub = p.add_subparsers(dest="cmd", required=True)
     for name, fn, help_ in (("check", cmd_check, "scan a package and print a verdict"),
                             ("reveal", cmd_reveal, "show invisible-Unicode hits, decoded")):
         sp = sub.add_parser(name, help=help_)
-        sp.add_argument("target", help="package name or path to an unpacked package")
+        sp.add_argument("target", help="path to an unpacked package")
         sp.add_argument("-e", "--ecosystem", choices=("npm", "pypi"), default="npm")
         sp.add_argument("--json", action="store_true", help="machine-readable output")
         sp.set_defaults(fn=fn)

@@ -1,7 +1,7 @@
 """Version-diff: what did the new version ADD?
 
-    harmonica diff <old-folder> <new-folder>          (works today)
-    harmonica diff <package> <old-version> <new-version>   (once the resolver takes a version)
+    packagesentinel diff <old-folder> <new-folder>          (works today)
+    packagesentinel diff <package> <old-version> <new-version>   (once acquisition supports version comparison)
 
 Runs the full pipeline (resolve -> run_scanner -> score) on both versions and
 compares them:
@@ -349,7 +349,7 @@ def print_result(r: dict, color: bool) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    p = argparse.ArgumentParser(prog="harmonica diff", description="What did the new version add?")
+    p = argparse.ArgumentParser(prog="packagesentinel diff", description="What did the new version add?")
     p.add_argument("targets", nargs="+", metavar="TARGET",
                    help="<old-folder> <new-folder>, or <package> <old-version> <new-version>")
     p.add_argument("-e", "--ecosystem", choices=("npm", "pypi"), default="npm")
@@ -364,13 +364,13 @@ def main(argv: list[str] | None = None) -> int:
             p.error("expected 2 folders or a package and 2 versions")
     except TypeError as exc:
         if "version" in str(exc):
-            print("harmonica diff: the resolver does not take a version yet "
+            print("packagesentinel diff: the resolver does not take a version yet "
                   "(needs resolve(pkg, ecosystem, version=None)); pass two local folders for now",
                   file=sys.stderr)
             return 2
         raise
     except Exception as exc:
-        print(f"harmonica diff: {exc}", file=sys.stderr)
+        print(f"packagesentinel diff: {exc}", file=sys.stderr)
         return 2
     if args.json:
         print(json.dumps(result, indent=2, ensure_ascii=False))

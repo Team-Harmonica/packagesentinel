@@ -1,4 +1,4 @@
-# Benign calibration corpus for `python -m harmonica calibrate` and `python -m harmonica eval`.
+# Benign calibration corpus for `packagesentinel calibrate` and `packagesentinel eval`.
 #
 # One root per line. Each root is split into package-sized units: its children,
 # with node_modules/, site-packages/ and @scope/ directories expanded. Globs

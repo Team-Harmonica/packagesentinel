@@ -1,5 +1,6 @@
 import base64
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -8,6 +9,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from app.detection import code_scan  # noqa: E402
 from app.detection.analyzers import PackageContentAnalyzer  # noqa: E402
 from app.detection.scanner import run_scanner  # noqa: E402
+from tests.detection_samples import png  # noqa: E402
 
 
 def js(src):
@@ -193,6 +195,29 @@ class Samples(unittest.TestCase):
         self.assertTrue(findings)
         self.assertTrue(all(f.source == "harmonica_static" for f in findings))
         self.assertTrue(all(f.confidence > 0 for f in findings))
+
+    def test_steganography_detector_is_adapted_to_typed_findings(self):
+        with tempfile.TemporaryDirectory() as directory:
+            Path(directory, "image.png").write_bytes(png() + b"\x7fELF" + bytes(64))
+            findings = PackageContentAnalyzer.analyze_directory(directory)
+
+        [finding] = [item for item in findings if item.metadata["detector"] == "stego"]
+        self.assertEqual(finding.category, "steganography")
+        self.assertEqual(finding.source, "harmonica_static")
+
+    def test_trojan_source_finding_is_adapted(self):
+        with tempfile.TemporaryDirectory() as directory:
+            Path(directory, "source.js").write_text(
+                'if (role != "user\u202e \u2066// admin\u2069\u2066") {}',
+                encoding="utf-8",
+            )
+            findings = PackageContentAnalyzer.analyze_directory(directory)
+
+        finding = next(
+            item for item in findings
+            if item.metadata["detector"] == "trojan_source_bidi"
+        )
+        self.assertEqual(finding.category, "obfuscation")
 
 
 if __name__ == "__main__":

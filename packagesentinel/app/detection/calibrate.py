@@ -1,10 +1,10 @@
 """Calibration: pick band thresholds from data instead of by hand.
 
-    python -m harmonica calibrate [--no-corpus] [--corpus FILE] [--workers N]
+    packagesentinel calibrate [--no-corpus] [--corpus FILE] [--workers N]
 
 Scores every labelled package:
-  * test-samples/malicious/*  -> label malicious
-  * test-samples/benign/*     -> label benign
+  * tests/fixtures/detection-samples/malicious/*  -> label malicious
+  * tests/fixtures/detection-samples/benign/*     -> label benign
   * the benign corpus (calibration/benign-corpus.txt): real, legitimate code
     split into package-sized units (stdlib modules, npm deps, VS Code
     extensions, Electron app node_modules, ...)
@@ -35,8 +35,8 @@ from . import scoring
 from .resolver import resolve
 from .scanner import run_scanner
 
-REPO = Path(__file__).resolve().parent.parent
-SAMPLES = REPO / "test-samples"
+REPO = Path(__file__).resolve().parents[2]
+SAMPLES = REPO / "tests" / "fixtures" / "detection-samples"
 DEFAULT_CORPUS = REPO / "calibration" / "benign-corpus.txt"
 
 EXPAND = {"node_modules", "site-packages", "dist-packages"}
@@ -247,7 +247,7 @@ def print_metrics(name: str, m: dict) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    p = argparse.ArgumentParser(prog="harmonica calibrate", description=__doc__.split("\n\n")[0])
+    p = argparse.ArgumentParser(prog="packagesentinel calibrate", description=__doc__.split("\n\n")[0])
     p.add_argument("--corpus", type=Path, default=DEFAULT_CORPUS, help="benign corpus list file")
     p.add_argument("--no-corpus", action="store_true", help="labelled samples only (fast)")
     p.add_argument("--workers", type=int, default=None)
@@ -304,8 +304,8 @@ def main(argv: list[str] | None = None) -> int:
     print_metrics("  flagged (susp+)", metrics(ok, suggested, {"suspicious", "malicious"}))
     if len(mal) < 20:
         print(f"\nNote: only {len(mal)} malicious samples. Recall is measured on a small set; add more "
-              "fixtures to test-samples/malicious/ to make it meaningful.")
+              "fixtures to tests/fixtures/detection-samples/malicious/ to make it meaningful.")
     for r in errors:
         print(f"  error: {r.name}: {r.error}")
-    print("\nTo adopt the suggestion, edit THRESHOLDS in harmonica/scoring.py.")
+    print("\nTo adopt the suggestion, edit THRESHOLDS in app/detection/scoring.py.")
     return 1 if s["overlap"] else 0

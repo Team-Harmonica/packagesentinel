@@ -10,7 +10,7 @@ logic below them is lookups and arithmetic. Tuning means editing data.
                          (weak signals together = strong signal)
     Stage 3  DAMPENERS   false-alarm control: (reason, condition, type, delta)
     Stage 4  CAP+BANDS   clamp to 0..100, then THRESHOLDS -> safe/suspicious/malicious
-                         (thresholds come from `python -m harmonica calibrate`)
+                         (thresholds come from `packagesentinel calibrate`)
     Stage 5  OVERRIDE    any finding with severity "malicious" forces band
                          "malicious"; arithmetic never downgrades a confirmed payload
 
@@ -30,7 +30,7 @@ from .scanner import Finding
 # CONFIG: edit these, not the logic
 # ============================================================================
 
-# Stage 4: set by `python -m harmonica calibrate` (2026-10-31: 4 malicious samples,
+# Stage 4: set by `packagesentinel calibrate` (2026-10-31: 4 malicious samples,
 # 709 benign packages incl. 707 real-code corpus units; highest benign score 35,
 # lowest malicious 100). Re-run calibrate after changing any weight.
 THRESHOLDS = {"malicious": 45, "suspicious": 24}
@@ -162,7 +162,18 @@ COMBOS = [
     ({"dynamic_fetch", "hook_exists"}, 25, "downloads and runs code at install"),
 ]
 
-# Meta-derived signals (used when Aryan's metadata check hasn't emitted them)
+# Version-diff (diff.py): risky signal types that FIRST appear in a patch or minor
+# release get a bonus. Hijacked updates ship as innocent-looking patch bumps.
+# "new_install_script" and "new_dependency" are synthesized by diff.py itself.
+UPDATE_RISK_TYPES = {
+    "glassworm_unicode", "trojan_source_bidi", "stego_payload", "stego_loader", "glassworm_loader",
+    "eval_decoded", "dynamic_fetch", "stealer_shape", "webhook_exfil", "exfil_host", "raw_ip_url",
+    "ssh_aws_read", "credential_path", "env_dump", "encoded_code", "obfuscation",
+    "hook_exists", "new_install_script",
+}
+UPDATE_RISK_BONUS = {"patch": 20, "minor": 10}  # major bumps are expected to change behaviour
+
+# Metadata-derived signals used when normalized package metadata is available.
 NEW_PACKAGE_DAYS = 30
 LOW_DOWNLOADS = 1_000
 POPULAR_DOWNLOADS = 100_000
@@ -232,6 +243,12 @@ def _meta_types(meta: dict) -> dict[str, str]:
     return out
 
 
+def band_for(score: int) -> str:
+    if score >= THRESHOLDS["malicious"]:
+        return "malicious"
+    return "suspicious" if score >= THRESHOLDS["suspicious"] else "safe"
+
+
 def _has(req: str, types: set[str]) -> bool:
     return bool(GROUPS.get(req, {req}) & types)
 
@@ -285,12 +302,7 @@ def score(findings: list[Finding], meta: dict | None = None) -> tuple[int, str, 
     capped = max(0, min(100, total))
     if capped != total:
         explanation.append(f"= {capped} (clamped from {total})")
-    if capped >= THRESHOLDS["malicious"]:
-        band = "malicious"
-    elif capped >= THRESHOLDS["suspicious"]:
-        band = "suspicious"
-    else:
-        band = "safe"
+    band = band_for(capped)
 
     # Stage 5: severity override
     confirmed = next((f for f in findings if f.severity == "malicious"), None)

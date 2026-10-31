@@ -5,9 +5,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from harmonica import scoring  # noqa: E402
-from harmonica.scanner import Finding  # noqa: E402
-from harmonica.scoring import THRESHOLDS, build_verdict, finding_type, score  # noqa: E402
+from app.detection import scoring  # noqa: E402
+from app.detection.scanner import Finding  # noqa: E402
+from app.detection.scoring import THRESHOLDS, build_verdict, finding_type, score  # noqa: E402
 
 
 def F(check, message, severity="suspicious", weight=10, location="x.js:1"):

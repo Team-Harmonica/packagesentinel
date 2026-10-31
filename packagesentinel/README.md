@@ -9,16 +9,20 @@ Persistence uses async SQLite via `aiosqlite`; the default database is
 `sqlite+aiosqlite` driver. The backend has no external database or object
 storage requirement.
 
-The Harmonica static code and invisible-Unicode detectors are under
-`app/detection/`. They can scan an already-unpacked local package directory via
-`PackageContentAnalyzer.analyze_directory()`. Registry download/archive
-acquisition and an upload contract are not wired into the API yet, so API scan
-reports currently mark static analysis unavailable and report incomplete
-coverage rather than implying that a package is safe.
+Static detectors are under `app/detection/`. `PackageContentAnalyzer.analyze_directory()`
+can scan an already-unpacked package for suspicious code, invisible-Unicode
+payloads, and steganographic content in images. The scanner reads package files
+as data and does not execute them. Registry download/archive acquisition is not
+wired into the API yet, so API scan reports mark static analysis unavailable
+and report incomplete coverage rather than implying that a package is safe.
 
-Typosquat and metadata flags from a frontend are also deferred until that
-frontend request contract is available. Risk scoring and package verdicts are
-intentionally not part of this backend.
+Hook, metadata, and typosquatting checks are not yet implemented and are not
+registered as active checks.
+Typosquat and metadata flags from a frontend remain deferred until that
+frontend request contract is available. The local CLI includes scoring,
+evaluation, calibration, and directory-diff tools; score/verdict output is not
+part of the API report contract. The CLI's capability-profile builder remains
+a stub, so its capability and mismatch summaries are currently empty.
 
 ## Setup
 
@@ -52,6 +56,11 @@ findings = PackageContentAnalyzer.analyze_directory("/path/to/unpacked/package")
 ```
 
 Package files are read as data; the scanner does not execute package code.
+
+The local analysis CLI is also available as `packagesentinel check <directory>`,
+`packagesentinel reveal <directory>`, `packagesentinel diff <old> <new>`,
+`packagesentinel eval`, and `packagesentinel calibrate`. The CLI accepts local
+directories; it does not fetch packages from npm or PyPI.
 
 ## Acquisition contract
 

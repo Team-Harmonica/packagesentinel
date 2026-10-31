@@ -34,6 +34,7 @@ from . import code_scan
 from .scanner import Finding, iter_files, rel
 
 CHECK = "glassworm"
+TROJAN_SOURCE = "trojan_source_bidi"
 
 # --- codepoint classes ------------------------------------------------------
 
@@ -353,9 +354,10 @@ def _hit_finding(hit: Hit, is_code: bool) -> Finding | None:
                        "Invisible identifier character (Hangul filler): renders as blank but is "
                        "a valid identifier, a known way to hide a backdoor parameter", hit.location)
     if set(hit.kinds) == {"bidi-control"}:
-        return Finding(CHECK, "suspicious", 20,
-                       f"Trojan Source: {hit.length} bidirectional control character(s) can make "
-                       "code display differently from how it executes", hit.location)
+        # Its own named threat, not a GlassWorm sub-case: same raw-byte pass, separate check.
+        return Finding(TROJAN_SOURCE, "malicious", 100,
+                       f"Trojan Source (CVE-2021-42574): {hit.length} bidirectional control character(s) "
+                       "in code reorder how it displays vs. how it executes", hit.location)
     if hit.in_identifier:
         return Finding(CHECK, "suspicious", 15,
                        f"{hit.length} invisible {kinds} character(s) inside an identifier: two names "

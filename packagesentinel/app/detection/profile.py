@@ -1,6 +1,6 @@
-"""Capability profile: bucket findings into filesystem / network / process /
-env and flag mismatches against the package's stated purpose.
-STUB (build order step 5).
+"""Capability-profile extension point used by the local scoring CLI.
+
+Capability buckets and purpose mismatches are not implemented yet.
 """
 
 from __future__ import annotations
