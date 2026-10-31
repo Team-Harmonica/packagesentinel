@@ -15,10 +15,18 @@ from app.schemas.package import PackageRequest
 class FakePackageAcquirer:
     """Create a small local package artifact without contacting a registry."""
 
-    def __init__(self, error: AcquisitionError | None = None) -> None:
+    def __init__(
+        self,
+        error: AcquisitionError | None = None,
+        sample_files: dict[str, str] | None = None,
+    ) -> None:
         self.error = error
+        self.sample_files = sample_files or {}
+        self.last_artifact: AcquiredPackage | None = None
+        self.last_request: PackageRequest | None = None
 
     async def acquire(self, request: PackageRequest) -> AcquiredPackage:
+        self.last_request = request
         if self.error is not None:
             raise self.error
 
@@ -33,9 +41,13 @@ class FakePackageAcquirer:
             "test package contents\n",
             encoding="utf-8",
         )
+        for relative_path, content in self.sample_files.items():
+            path = extracted_dir / relative_path
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(content, encoding="utf-8")
 
         archive_bytes = f"{request.ecosystem.value}:{request.name}@{request.version}".encode()
-        return AcquiredPackage(
+        artifact = AcquiredPackage(
             package_name=request.name,
             ecosystem=request.ecosystem.value,
             version=request.version,
@@ -48,3 +60,5 @@ class FakePackageAcquirer:
             },
             temporary_directory=temporary_directory,
         )
+        self.last_artifact = artifact
+        return artifact

@@ -16,10 +16,20 @@ from app.config import Settings
 from app.database.connection import get_db_session, set_engine
 from app.database.models import Base
 from app.main import app
+from tests.fake_acquirer import FakePackageAcquirer
 
 
 # In-memory SQLite async database engine with StaticPool for isolated, shared in-memory state
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
+
+
+@pytest.fixture(autouse=True)
+def fake_default_package_acquirer(monkeypatch):
+    """Prevent API/orchestrator tests from contacting public registries."""
+    monkeypatch.setattr(
+        "app.core.orchestrator.get_default_package_acquirer",
+        FakePackageAcquirer,
+    )
 
 
 @pytest.fixture(scope="session")

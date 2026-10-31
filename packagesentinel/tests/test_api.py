@@ -101,20 +101,21 @@ async def test_end_to_end_api_submission_and_report_retrieval(async_client: Asyn
     assert report["scan_id"] == scan_id
     assert report["package"]["name"] == "suspicious-sample-tool"
     assert report["package"]["ecosystem"] == "npm"
-    assert report["analysis_complete"] is False
+    assert report["analysis_complete"] is True
     assert report["findings"] == []
     assert report["correlations"] == []
     assert "compatibility_profile" in report
-    assert report["compatibility_profile"]["coverage"] == 25.0
+    assert report["compatibility_profile"]["coverage"] == 50.0
+    assert report["analyzer_execution_statuses"]["acquisition"] == "completed"
     assert report["analyzer_execution_statuses"]["metadata_analysis"] == "completed"
-    assert "incomplete" in report["summary"].lower()
-    assert "package contents" in report["analyzer_errors"]["static_analysis"].lower()
+    assert report["analyzer_execution_statuses"]["static_analysis"] == "completed"
+    assert "incomplete" not in report["summary"].lower()
     assert "verdict" not in report
     assert "risk_score" not in report
 
 
 @pytest.mark.asyncio
-async def test_api_report_includes_typosquat_finding_without_package_contents(
+async def test_api_report_includes_typosquat_finding(
     async_client: AsyncClient,
 ):
     response = await async_client.post(
@@ -140,4 +141,4 @@ async def test_api_report_includes_typosquat_finding_without_package_contents(
     assert len(typo_findings) == 1
     assert typo_findings[0]["severity"] == "medium"
     assert "requests" in typo_findings[0]["evidence"]
-    assert report["analysis_complete"] is False
+    assert report["analysis_complete"] is True

@@ -5,6 +5,7 @@ import logging
 from typing import Optional
 from uuid import UUID
 
+from app.acquisition.contracts import PackageAcquirer
 from app.core.orchestrator import ScanOrchestrator
 from app.database.connection import get_sessionmaker
 from app.schemas.package import PackageRequest
@@ -16,10 +17,13 @@ async def execute_scan_job(
     scan_id: UUID,
     package_req: PackageRequest,
     orchestrator: Optional[ScanOrchestrator] = None,
+    package_acquirer: Optional[PackageAcquirer] = None,
 ) -> None:
     """Asynchronous worker entrypoint for processing a queued scan job."""
     session_factory = get_sessionmaker()
-    orchestrator = orchestrator or ScanOrchestrator()
+    orchestrator = orchestrator or ScanOrchestrator(
+        package_acquirer=package_acquirer,
+    )
 
     async with session_factory() as session:
         try:
@@ -38,11 +42,11 @@ def dispatch_background_scan(
     scan_id: UUID,
     package_req: PackageRequest,
     orchestrator: Optional[ScanOrchestrator] = None,
+    package_acquirer: Optional[PackageAcquirer] = None,
 ) -> asyncio.Task:
     """Dispatch the scan job to Python asyncio event loop background tasks."""
     task = asyncio.create_task(
-        execute_scan_job(scan_id, package_req, orchestrator)
+        execute_scan_job(scan_id, package_req, orchestrator, package_acquirer)
     )
     logger.debug("Dispatched background asyncio task %s for scan %s", task.get_name(), scan_id)
     return task
-

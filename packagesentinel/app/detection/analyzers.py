@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
+from app.acquisition.contracts import AcquiredPackage
 from app.detection.scanner import Finding as DetectorFinding
 from app.detection.scanner import run_scanner
 from app.schemas.finding import Finding, Severity
@@ -38,14 +39,18 @@ class BaseAnalyzer:
     def is_available(self) -> bool:
         return True
 
-    async def analyze(self, package: PackageRequest) -> AnalyzerResult:
+    async def analyze(
+        self,
+        package: PackageRequest,
+        acquired_package: Optional[AcquiredPackage] = None,
+    ) -> AnalyzerResult:
         return AnalyzerResult(
             analyzer_name=self.name,
             stage_key=self.stage_key,
             status=AnalyzerStatus.NOT_AVAILABLE,
             error_message=(
-                "Package contents are not available; package acquisition or upload "
-                "must be implemented before static analysis can run."
+                "Package contents are not available; static analysis requires an "
+                "acquired package artifact."
             ),
         )
 
@@ -65,6 +70,7 @@ class PackageContentAnalyzer(BaseAnalyzer):
         "typosquat": "typosquatting",
         "capability": "capability_profile",
     }
+    requires_package_contents = True
     SEVERITY_BY_DETECTOR = {
         "info": Severity.LOW,
         "suspicious": Severity.MEDIUM,
@@ -109,6 +115,40 @@ class PackageContentAnalyzer(BaseAnalyzer):
             for item in run_scanner(package_dir, metadata or {})
         ]
 
+    async def analyze(
+        self,
+        package: PackageRequest,
+        acquired_package: Optional[AcquiredPackage] = None,
+    ) -> AnalyzerResult:
+        if acquired_package is None:
+            return await super().analyze(package)
+
+        metadata = {
+            **acquired_package.metadata,
+            "name": acquired_package.package_name,
+            "ecosystem": acquired_package.ecosystem,
+            "version": acquired_package.version,
+        }
+        detector_findings = run_scanner(acquired_package.extracted_dir, metadata)
+        findings = [
+            self._convert_finding(item)
+            for item in detector_findings
+            if item.check != "typosquat"
+        ]
+        return AnalyzerResult(
+            analyzer_name=self.name,
+            stage_key=self.stage_key,
+            status=AnalyzerStatus.COMPLETED,
+            findings=findings,
+            metadata={
+                "archive_sha256": acquired_package.archive_sha256,
+                "warnings": acquired_package.warnings,
+                "skipped_files": [
+                    item.model_dump() for item in acquired_package.skipped_files
+                ],
+            },
+        )
+
 
 class PackageIdentityAnalyzer(BaseAnalyzer):
     """Run package-name checks that do not require downloaded package contents."""
@@ -116,7 +156,11 @@ class PackageIdentityAnalyzer(BaseAnalyzer):
     name = "package_identity"
     stage_key = "metadata_analysis"
 
-    async def analyze(self, package: PackageRequest) -> AnalyzerResult:
+    async def analyze(
+        self,
+        package: PackageRequest,
+        acquired_package: Optional[AcquiredPackage] = None,
+    ) -> AnalyzerResult:
         from app.detection.typosquat import check
 
         metadata = {

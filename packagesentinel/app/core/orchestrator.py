@@ -1,12 +1,16 @@
 """Asynchronous scan orchestration, evidence aggregation, and report persistence."""
 
+import asyncio
 from datetime import datetime, timezone
 import logging
+import re
 from typing import Dict, List, Optional
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.acquisition.contracts import AcquisitionError, AcquiredPackage, PackageAcquirer
+from app.acquisition.service import get_default_package_acquirer
 from app.core.compatibility import CompatibilityProfileGenerator
 from app.core.correlation import CorrelationEngine
 from app.core.evidence import aggregate_evidence
@@ -24,6 +28,14 @@ from app.schemas.report import ScanReport
 from app.services.report_generator import ReportGenerator
 
 logger = logging.getLogger(__name__)
+DEFAULT_ACQUISITION_TIMEOUT_SECONDS = 120
+
+
+def _package_name_key(name: str, ecosystem: str) -> str:
+    key = name.casefold()
+    if ecosystem == "pypi":
+        key = re.sub(r"[-_.]+", "-", key)
+    return key
 
 
 class ScanOrchestrator:
@@ -35,6 +47,8 @@ class ScanOrchestrator:
         correlation_engine: Optional[CorrelationEngine] = None,
         profile_generator: Optional[CompatibilityProfileGenerator] = None,
         report_generator: Optional[ReportGenerator] = None,
+        package_acquirer: Optional[PackageAcquirer] = None,
+        acquisition_timeout_seconds: float = DEFAULT_ACQUISITION_TIMEOUT_SECONDS,
     ) -> None:
         self.analyzers = (
             analyzers
@@ -44,6 +58,10 @@ class ScanOrchestrator:
         self.correlation_engine = correlation_engine or CorrelationEngine()
         self.profile_generator = profile_generator or CompatibilityProfileGenerator()
         self.report_generator = report_generator or ReportGenerator()
+        if acquisition_timeout_seconds <= 0:
+            raise ValueError("acquisition_timeout_seconds must be positive")
+        self.package_acquirer = package_acquirer or get_default_package_acquirer()
+        self.acquisition_timeout_seconds = acquisition_timeout_seconds
 
     async def execute_scan(
         self,
@@ -60,10 +78,9 @@ class ScanOrchestrator:
             package_req.version,
         )
 
+        acquired_package: AcquiredPackage | None = None
         try:
             await repository.update_scan_status(session, scan_id, "fetching")
-            await session.commit()
-            await repository.update_scan_status(session, scan_id, "analyzing")
             await session.commit()
 
             analyzer_results: List[AnalyzerResult] = []
@@ -71,8 +88,115 @@ class ScanOrchestrator:
             analyzer_statuses: Dict[str, str] = {}
             analyzer_errors: Dict[str, str] = {}
 
+            candidate: AcquiredPackage | None = None
+            try:
+                candidate = await asyncio.wait_for(
+                    self.package_acquirer.acquire(package_req),
+                    timeout=self.acquisition_timeout_seconds,
+                )
+                if (
+                    candidate.ecosystem != package_req.ecosystem.value
+                    or candidate.version != package_req.version
+                    or _package_name_key(
+                        candidate.package_name,
+                        candidate.ecosystem,
+                    )
+                    != _package_name_key(
+                        package_req.name,
+                        package_req.ecosystem.value,
+                    )
+                ):
+                    candidate.cleanup()
+                    candidate = None
+                    raise AcquisitionError(
+                        "Acquirer returned an artifact that does not match the request"
+                    )
+                acquired_package = candidate
+                candidate = None
+            except (AcquisitionError, TimeoutError) as err:
+                if candidate is not None:
+                    candidate.cleanup()
+                message = (
+                    f"Package acquisition timed out after "
+                    f"{self.acquisition_timeout_seconds:g} seconds"
+                    if isinstance(err, TimeoutError)
+                    else f"Package acquisition failed: {err}"
+                )
+                logger.warning(
+                    "Acquisition failed for scan %s: %s",
+                    scan_id,
+                    message,
+                    exc_info=True,
+                )
+                acquisition_result = AnalyzerResult(
+                    analyzer_name="package_acquisition",
+                    stage_key="acquisition",
+                    status=AnalyzerStatus.FAILED,
+                    error_message=message,
+                )
+            except Exception as err:
+                if candidate is not None:
+                    candidate.cleanup()
+                logger.error(
+                    "Unexpected acquisition failure for scan %s: %s",
+                    scan_id,
+                    err,
+                    exc_info=True,
+                )
+                acquisition_result = AnalyzerResult(
+                    analyzer_name="package_acquisition",
+                    stage_key="acquisition",
+                    status=AnalyzerStatus.FAILED,
+                    error_message=f"Unexpected package acquisition error: {err}",
+                )
+
+            if acquired_package is not None:
+                scan = await repository.get_scan(session, scan_id)
+                if scan is not None and scan.package_version is not None:
+                    await repository.get_or_create_package_version(
+                        session,
+                        scan.package_version.package_id,
+                        scan.package_version.version,
+                        acquired_package.archive_sha256,
+                    )
+                await session.commit()
+                acquisition_result = AnalyzerResult(
+                    analyzer_name="package_acquisition",
+                    stage_key="acquisition",
+                    status=AnalyzerStatus.COMPLETED,
+                    metadata={
+                        "archive_sha256": acquired_package.archive_sha256,
+                        "warnings": acquired_package.warnings,
+                        "skipped_files": [
+                            item.model_dump()
+                            for item in acquired_package.skipped_files
+                        ],
+                    },
+                )
+
+            analyzer_results.append(acquisition_result)
+            analyzer_statuses[acquisition_result.stage_key] = acquisition_result.status.value
+            if acquisition_result.error_message:
+                analyzer_errors[acquisition_result.stage_key] = acquisition_result.error_message
+
+            await repository.update_scan_status(session, scan_id, "analyzing")
+            await session.commit()
+
             for analyzer in self.analyzers:
-                if not analyzer.is_available:
+                if (
+                    acquired_package is None
+                    and getattr(analyzer, "requires_package_contents", False)
+                ):
+                    result = AnalyzerResult(
+                        analyzer_name=analyzer.name,
+                        stage_key=analyzer.stage_key,
+                        status=AnalyzerStatus.SKIPPED,
+                        error_message=(
+                            "Package analysis skipped because acquisition did not "
+                            "produce an artifact."
+                        ),
+                    )
+                elif not analyzer.is_available:
                     result = AnalyzerResult(
                         analyzer_name=analyzer.name,
                         stage_key=analyzer.stage_key,
@@ -81,7 +205,7 @@ class ScanOrchestrator:
                     )
                 else:
                     try:
-                        result = await analyzer.analyze(package_req)
+                        result = await analyzer.analyze(package_req, acquired_package)
                     except Exception as err:
                         logger.error(
                             "Analyzer '%s' failed: %s",
@@ -118,6 +242,9 @@ class ScanOrchestrator:
                 name=package_req.name,
                 ecosystem=package_req.ecosystem.value,
                 version=package_req.version,
+                archive_hash=(
+                    acquired_package.archive_sha256 if acquired_package else None
+                ),
             )
             report = self.report_generator.generate_report(
                 scan_id=scan_id,
@@ -160,3 +287,6 @@ class ScanOrchestrator:
             except Exception as commit_err:
                 logger.error("Failed to mark scan %s as failed: %s", scan_id, commit_err)
             raise
+        finally:
+            if acquired_package is not None:
+                acquired_package.cleanup()

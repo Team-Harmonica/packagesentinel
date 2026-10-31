@@ -10,19 +10,19 @@ Persistence uses async SQLite via `aiosqlite`; the default database is
 storage requirement.
 
 Static detectors are under `app/detection/`. `PackageContentAnalyzer.analyze_directory()`
-can scan an already-unpacked package for suspicious code, invisible-Unicode
-payloads, and steganographic content in images. The scanner reads package files
-as data and does not execute them. Registry download/archive acquisition is not
-wired into the API yet, so API scan reports mark static analysis unavailable
-and report incomplete coverage rather than implying that a package is safe.
+scans acquired packages for suspicious code, invisible-Unicode payloads, and
+steganographic content in images. npm and PyPI acquisition uses exact-version
+registry requests and safe archive extraction. The scanner reads package files
+as data and does not execute them. Reports record acquisition failures and mark
+static analysis as skipped rather than implying that a package is safe.
 
 The scanner includes an offline typosquatting signal for names one edit or
 adjacent transposition away from a curated set of popular npm/PyPI packages,
 and for names using common confusable characters. It requires the requested
 package's `name` and `ecosystem` in scanner metadata; the reference list is
-intentionally finite and is not a registry-wide typosquatting service. Hook
-The API runs this name-only check from the scan request without downloaded
-package contents. Hook and broader metadata checks are not implemented.
+intentionally finite and is not a registry-wide typosquatting service. The API
+runs this name-only check from the scan request without downloaded package
+contents. Hook and broader metadata checks are not implemented.
 Frontend-provided flags remain deferred until that request contract is
 available. The local CLI includes scoring, evaluation, calibration, and
 directory-diff tools; score/verdict output is not part of the API report
@@ -50,9 +50,9 @@ The API documentation is available at `http://127.0.0.1:8000/docs`.
   coverage, and analyzer availability details.
 - `GET /api/v1/health` — check API and database connectivity.
 
-## Static detector use
+## Local static detector use
 
-The current detector interface accepts an unpacked directory:
+The synchronous detector helper accepts an unpacked directory:
 
 ```python
 from app.detection.analyzers import PackageContentAnalyzer
@@ -65,7 +65,7 @@ Package files are read as data; the scanner does not execute package code.
 The local analysis CLI is also available as `packagesentinel check <directory>`,
 `packagesentinel reveal <directory>`, `packagesentinel diff <old> <new>`,
 `packagesentinel eval`, and `packagesentinel calibrate`. The CLI accepts local
-directories; it does not fetch packages from npm or PyPI.
+directories; unlike API scan jobs, it does not fetch packages from npm or PyPI.
 
 ## Acquisition contract
 
@@ -76,14 +76,18 @@ non-fatal warnings, and structured `SkippedFile` entries. The metadata is a
 registry-independent dictionary; acquisition implementations should normalize
 registry responses before returning it.
 
-The acquirer creates and initially owns a `TemporaryDirectory`, then transfers
-its handle with the returned artifact. The caller owns cleanup after receiving
-the artifact and must call `artifact.cleanup()` in a `finally` block after
-analysis. The extracted directory must be inside that temporary directory.
+The scan orchestrator chooses the npm or PyPI acquirer from the request and
+applies a 120-second acquisition timeout. It passes the resulting artifact to
+configured analyzers, persists the archive SHA-256 on the package version, and
+calls `artifact.cleanup()` in a `finally` block after analysis. The acquirer
+creates and initially owns a `TemporaryDirectory`, then transfers its handle
+with the returned artifact. The extracted directory must be inside that
+temporary directory.
 Acquisition failures raise `AcquisitionError` or one of its specific
 subclasses: `PackageNotFoundError`, `VersionNotFoundError`, `RegistryError`,
-`ArchiveValidationError`, or `ExtractionError`; failures must not be returned
-as incomplete artifacts.
+`ArchiveValidationError`, or `ExtractionError`. Failures and timeouts are
+recorded in the report's `acquisition` analyzer status; static analysis is
+skipped and the report remains incomplete rather than implying a safe result.
 
 ## Tests
 
