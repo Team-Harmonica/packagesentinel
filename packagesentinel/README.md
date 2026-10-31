@@ -29,9 +29,8 @@ runs this name-only check from the scan request without downloaded package
 contents. Hook and broader metadata checks are not implemented.
 The API report exposes `detection_flags.metadata` and
 `detection_flags.typosquatting` alongside the findings. The metadata analyzer
-adapter expects `app.detection.metadata.analyze(metadata)` to return shared
-`Finding` objects; that detector module is not present yet, so metadata analysis
-is currently reported as unavailable. The local CLI includes scoring,
+adapter invokes `app.detection.metadata.check(package_dir, metadata)` and
+normalizes its findings into the shared report schema. The local CLI includes scoring,
 evaluation, calibration, and
 directory-diff tools; score/verdict output is not part of the API report
 contract. The CLI's capability-profile builder remains a stub, so its

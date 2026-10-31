@@ -92,10 +92,14 @@ class PackageContentAnalyzer(BaseAnalyzer):
     ) -> Finding:
         location = re.match(r"^(.*?):(\d+)(?::\d+)?(?: \(.*\))?$", item.location)
         return Finding(
-            rule_id=f"PACKAGESENTINEL-{item.check.upper()}",
-            category=cls.CATEGORY_BY_CHECK.get(item.check, item.check),
+            rule_id=item.rule_id or f"PACKAGESENTINEL-{item.check.upper()}",
+            category=item.category or cls.CATEGORY_BY_CHECK.get(item.check, item.check),
             severity=cls.SEVERITY_BY_DETECTOR[item.severity],
-            confidence=cls.CONFIDENCE_BY_DETECTOR[item.severity],
+            confidence=(
+                item.confidence
+                if item.confidence is not None
+                else cls.CONFIDENCE_BY_DETECTOR[item.severity]
+            ),
             file=location.group(1) if location else item.location or None,
             line=int(location.group(2)) if location else None,
             evidence=item.message,
@@ -135,7 +139,7 @@ class PackageContentAnalyzer(BaseAnalyzer):
         findings = [
             self._convert_finding(item)
             for item in detector_findings
-            if item.check != "typosquat"
+            if item.check not in {"metadata", "typosquat"}
         ]
         return AnalyzerResult(
             analyzer_name=self.name,
@@ -155,8 +159,8 @@ class PackageContentAnalyzer(BaseAnalyzer):
 class PackageMetadataAnalyzer(BaseAnalyzer):
     """Adapt metadata detection results to the shared analyzer result contract.
 
-    The detection module is expected to expose ``analyze(metadata: dict)``
-    returning shared ``Finding`` objects or mappings accepted by that schema.
+    The detection module exposes ``check(package_dir, metadata)`` and returns
+    scanner findings, which this adapter normalizes into shared findings.
     """
 
     name = "package_metadata"
@@ -165,13 +169,11 @@ class PackageMetadataAnalyzer(BaseAnalyzer):
 
     def __init__(
         self,
-        detector: Optional[Callable[[Dict[str, Any]], Sequence[Finding]]] = None,
+        detector: Optional[Callable[[Dict[str, Any]], Sequence[Any]]] = None,
     ) -> None:
         self._detector = detector
 
-    def _get_detector(
-        self,
-    ) -> Optional[Callable[[Dict[str, Any]], Sequence[Finding]]]:
+    def _get_detector(self) -> Optional[Callable[..., Sequence[Any]]]:
         if self._detector is not None:
             return self._detector
         try:
@@ -180,10 +182,10 @@ class PackageMetadataAnalyzer(BaseAnalyzer):
             if exc.name == "app.detection.metadata":
                 return None
             raise
-        detector = getattr(module, "analyze", None)
+        detector = getattr(module, "check", None)
         if detector is None:
             raise AttributeError(
-                "app.detection.metadata must expose analyze(metadata)"
+                "app.detection.metadata must expose check(package_dir, metadata)"
             )
         return detector
 
@@ -218,12 +220,19 @@ class PackageMetadataAnalyzer(BaseAnalyzer):
             "ecosystem": acquired_package.ecosystem,
             "version": acquired_package.version,
         }
-        findings = [
-            Finding.model_validate(finding).model_copy(
-                update={"source": self.stage_key}
-            )
-            for finding in detector(metadata)
-        ]
+        detected = (
+            detector(metadata)
+            if self._detector is not None
+            else detector(acquired_package.extracted_dir, metadata)
+        )
+        findings = []
+        for item in detected:
+            if isinstance(item, Finding):
+                findings.append(item.model_copy(update={"source": self.stage_key}))
+            else:
+                findings.append(
+                    PackageContentAnalyzer._convert_finding(item, source=self.stage_key)
+                )
         return AnalyzerResult(
             analyzer_name=self.name,
             stage_key=self.stage_key,
@@ -247,6 +256,7 @@ class PackageTyposquattingAnalyzer(BaseAnalyzer):
         from app.detection.typosquat import check
 
         metadata = {
+            **(acquired_package.metadata if acquired_package is not None else {}),
             "ecosystem": package.ecosystem.value,
             "name": package.name,
         }

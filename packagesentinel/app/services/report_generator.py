@@ -8,14 +8,18 @@ from app.core.compatibility import (
     analysis_stages_complete,
     calculate_stage_coverage,
 )
-from app.core.evidence import AggregatedEvidence
-from app.schemas.finding import Finding
+from app.core.evidence import AggregatedEvidence, DeduplicatedFinding
+from app.schemas.finding import Finding, Severity
 from app.schemas.package import PackageInfo
 from app.schemas.report import (
     CompatibilityProfile,
     CorrelationResult,
     ScanReport,
 )
+
+
+def _is_positive_detection(finding: DeduplicatedFinding) -> bool:
+    return finding.severity in {Severity.MEDIUM, Severity.HIGH, Severity.CRITICAL}
 
 
 class ReportGenerator:
@@ -91,11 +95,12 @@ class ReportGenerator:
         )
         detection_flags = {
             "metadata": any(
-                "metadata_analysis" in finding.sources
+                "metadata_analysis" in finding.sources and _is_positive_detection(finding)
                 for finding in evidence.unique_findings
             ),
             "typosquatting": any(
                 "typosquatting_analysis" in finding.sources
+                and _is_positive_detection(finding)
                 for finding in evidence.unique_findings
             ),
         }

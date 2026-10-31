@@ -46,9 +46,9 @@ async def test_orchestrator_acquires_and_analyzes_package_contents(db_session: A
     assert report.scan_id == scan.id
     assert report.analysis_complete is False
     assert report.job_status == "completed"
-    assert report.compatibility_profile.coverage == 40.0
+    assert report.compatibility_profile.coverage == 60.0
     assert report.compatibility_profile.stages["static_analysis"] == "completed"
-    assert report.compatibility_profile.stages["metadata_analysis"] == "unavailable"
+    assert report.compatibility_profile.stages["metadata_analysis"] == "completed"
     assert report.compatibility_profile.stages["typosquatting_analysis"] == "completed"
     assert report.compatibility_profile.stages["behavioral_analysis"] == "unavailable"
     assert report.compatibility_profile.stages["dependency_analysis"] == "unavailable"
@@ -141,9 +141,9 @@ async def test_orchestrator_persists_typosquat_finding_during_acquisition(
 
     assert report.analysis_complete is False
     assert report.job_status == "completed"
-    assert report.compatibility_profile.stages["metadata_analysis"] == "unavailable"
+    assert report.compatibility_profile.stages["metadata_analysis"] == "completed"
     assert report.compatibility_profile.stages["typosquatting_analysis"] == "completed"
-    assert report.compatibility_profile.coverage == 40.0
+    assert report.compatibility_profile.coverage == 60.0
     assert len(report.findings) == 1
     assert report.findings[0].category == "typosquatting"
     assert "requests" in report.findings[0].evidence
