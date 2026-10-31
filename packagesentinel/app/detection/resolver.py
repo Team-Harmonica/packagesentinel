@@ -37,6 +37,14 @@ def resolve(pkg: str, ecosystem: str = "npm", version: str | None = None,
         return path, meta
     if version is None and path.is_file():
         return archive.extract_with_meta(path.read_bytes(), dest, ecosystem, "local-archive")
+    return resolve_registry(pkg, ecosystem, version, dest)
+
+
+def resolve_registry(pkg: str, ecosystem: str = "npm", version: str | None = None,
+                     dest: str | Path | None = None) -> tuple[Path, dict]:
+    """Registry fetch only: never treats `pkg` as a local path. Use this for
+    names that come from the network (the web server), so a request can't
+    point the scanner at files on the host."""
     if ecosystem == "npm":
         from app.acquisition.npm import fetch_npm
         return fetch_npm(pkg, version, dest)

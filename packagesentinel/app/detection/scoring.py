@@ -67,6 +67,8 @@ WEIGHTS = {
     "low_downloads": 5,
     "maintainer_change": 15,
     "no_repo": 5,
+    "repo_mismatch": 15,         # repo link borrows another popular project (star-jacking)
+    "version_jump": 10,          # skips many majors / dependency-confusion 99.x
     # code shape
     "invisible_identifier": 25,
     "glassworm_hidden_text": 20,
@@ -82,6 +84,7 @@ WEIGHTS = {
     # noise: recorded as evidence, scored as nothing
     "stray_invisible": 0, "hidden_watermark": 0, "opaque_blob": 0, "shell_mention": 0,
     "media_trailer": 0, "literal_exec": 0, "ignore": 0,
+    "typosquat_unconfirmed": 0,  # similar name but no weak signal (popularity guard)
 }
 
 # Stage 1: finding -> type. First match wins. (check, message regex or None, type).
@@ -127,7 +130,10 @@ TYPE_RULES = [
     ("capability", r"^network:", "network_call"),
     ("capability", None, "ignore"),
     ("install_hooks", None, "hook_exists"),
+    ("typosquat", r"unconfirmed", "typosquat_unconfirmed"),
     ("typosquat", None, "typosquat"),
+    ("metadata", r"^Version ", "version_jump"),
+    ("metadata", r"^Repository link points", "repo_mismatch"),
     ("metadata", r"(?i)maintainer", "maintainer_change"),
     ("metadata", r"(?i)download", "low_downloads"),
     ("metadata", r"(?i)repo", "no_repo"),

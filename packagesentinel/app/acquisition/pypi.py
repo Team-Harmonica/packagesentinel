@@ -67,6 +67,33 @@ def pick_file(files: list[dict]) -> dict:
     return choice
 
 
+def _best_effort_project(name: str) -> dict | None:
+    try:
+        doc = _http.fetch_json(f"{JSON_API}/{quote(name)}/json")
+    except (AcquisitionError, _http.NotFound):
+        return None
+    return doc if isinstance(doc, dict) else None
+
+
+def history(releases, meta: dict) -> None:
+    """Best-effort history for the metadata check: when the project first
+    appeared and which release came before this one."""
+    if not isinstance(releases, dict):
+        return
+    first = {}
+    for v, files in releases.items():
+        stamps = [f.get("upload_time_iso_8601") or f.get("upload_time") for f in files or [] if isinstance(f, dict)]
+        stamps = [t for t in stamps if isinstance(t, str)]
+        if stamps:
+            first[v] = min(stamps)
+    if first:
+        meta["created"] = min(first.values())
+    mine = first.get(meta["version"])
+    if mine:
+        earlier = [v for v, t in first.items() if t < mine]
+        meta["previous_version"] = max(earlier, key=first.get) if earlier else None
+
+
 def fetch_pypi(name: str, version: str | None = None, dest: str | Path | None = None,
                limits: Limits = DEFAULT_LIMITS) -> tuple[Path, dict]:
     doc = resolve_release(name, version)
@@ -101,6 +128,9 @@ def fetch_pypi(name: str, version: str | None = None, dest: str | Path | None = 
         meta["dependencies"] = deps
     if info.get("summary"):
         meta.setdefault("description", info["summary"])
+    project = doc if version is None else _best_effort_project(name)
+    if project:
+        history(project.get("releases"), meta)
     meta["acquisition"]["warnings"] += warnings
     meta["acquisition"]["download_url"] = file["url"]
     meta["acquisition"]["filename"] = file.get("filename")

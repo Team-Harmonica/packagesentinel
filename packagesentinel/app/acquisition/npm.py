@@ -81,6 +81,28 @@ def _best_effort(url: str, limit: int = _http.MAX_JSON_BYTES):
         return None
 
 
+def _names(people) -> list[str]:
+    return [m.get("name") for m in people or [] if isinstance(m, dict) and m.get("name")]
+
+
+def history(packument: dict, exact: str, meta: dict) -> None:
+    """Best-effort history for the metadata check: publish dates, the release
+    before this one, and who maintained it (each version manifest records the
+    maintainers at publish time, so a takeover shows up as a changed set)."""
+    times = packument.get("time") if isinstance(packument.get("time"), dict) else {}
+    meta["published"] = times.get(exact)
+    meta["created"] = times.get("created")
+    releases = {v: t for v, t in times.items() if v not in ("created", "modified") and isinstance(t, str)}
+    if exact not in releases:
+        return
+    earlier = [v for v, t in releases.items() if t < releases[exact]]
+    meta["previous_version"] = max(earlier, key=releases.get) if earlier else None
+    if meta["previous_version"]:
+        prev = (packument.get("versions") or {}).get(meta["previous_version"]) or {}
+        if isinstance(prev, dict) and prev.get("maintainers"):
+            meta["previous_maintainers"] = _names(prev["maintainers"])
+
+
 def fetch_npm(name: str, version: str | None = None, dest: str | Path | None = None,
               limits: Limits = DEFAULT_LIMITS) -> tuple[Path, dict]:
     doc = resolve_version(name, version)
@@ -93,13 +115,12 @@ def fetch_npm(name: str, version: str | None = None, dest: str | Path | None = N
     meta["name"] = str(doc.get("name") or meta["name"] or name)
     meta["version"] = exact
     meta["ecosystem"] = "npm"
-    people = [m.get("name") for m in doc.get("maintainers") or [] if isinstance(m, dict) and m.get("name")]
-    meta["maintainers"] = people or meta["maintainers"]
+    meta["maintainers"] = _names(doc.get("maintainers")) or meta["maintainers"]
     if isinstance(doc.get("dependencies"), dict):
         meta["dependencies"] = {str(k): str(v) for k, v in doc["dependencies"].items()}
     packument = _best_effort(f"{REGISTRY}/{_enc(name)}", PACKUMENT_LIMIT)
     if isinstance(packument, dict):
-        meta["published"] = (packument.get("time") or {}).get(exact)
+        history(packument, exact, meta)
     downloads = _best_effort(f"{DOWNLOADS_API}/{_enc(name)}")
     if isinstance(downloads, dict) and isinstance(downloads.get("downloads"), int):
         meta["downloads"] = downloads["downloads"]

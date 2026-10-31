@@ -25,10 +25,17 @@ class Finding:
     weight: int
     message: str
     location: str = ""
+    # Optional, appended last so positional Finding(check, sev, w, msg, loc) calls
+    # keep working. Checks that set them: metadata (META00x), typosquat (TYPO00x).
+    rule_id: str = ""        # stable rule ID, e.g. "META001"
+    category: str = ""       # e.g. "typosquatting", "metadata"
+    confidence: float | None = None  # 0.0-1.0
 
     def __post_init__(self) -> None:
         if self.severity not in SEVERITIES:
             raise ValueError(f"severity must be one of {SEVERITIES}, got {self.severity!r}")
+        if self.confidence is not None and not 0.0 <= self.confidence <= 1.0:
+            raise ValueError(f"confidence must be within 0..1, got {self.confidence!r}")
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -74,7 +81,7 @@ def rel(path: Path, pkg_dir: Path | str) -> str:
 def _check_groups() -> list[tuple[str, list[tuple[str, Check]]]]:
     # Imported here so check modules can import Finding from this module
     # without a circular import.
-    from . import code_scan, glassworm, stego, typosquat
+    from . import code_scan, glassworm, metadata, stego, typosquat
 
     return [
         ("raw", [
@@ -85,6 +92,7 @@ def _check_groups() -> list[tuple[str, list[tuple[str, Check]]]]:
             ("code_scan", code_scan.check),
         ]),
         ("meta", [
+            ("metadata", metadata.check),
             ("typosquat", typosquat.check),
         ]),
     ]
