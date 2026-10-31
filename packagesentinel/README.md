@@ -4,6 +4,11 @@ PackageSentinel is a FastAPI backend for scanning npm and PyPI packages. It
 provides scan endpoints, persistence, asynchronous orchestration, compatibility
 profiles, evidence aggregation, correlation, and report generation.
 
+Persistence uses async SQLite via `aiosqlite`; the default database is
+`./packagesentinel.db`. Configure its location with `DATABASE_URL` using the
+`sqlite+aiosqlite` driver. The backend has no external database or object
+storage requirement.
+
 The Harmonica static code and invisible-Unicode detectors are under
 `app/detection/`. They can scan an already-unpacked local package directory via
 `PackageContentAnalyzer.analyze_directory()`. Registry download/archive

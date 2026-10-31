@@ -39,15 +39,10 @@ def get_engine() -> AsyncEngine:
         db_url = settings.database_url
         logger.info("Initializing async database engine with URL: %s", db_url)
 
-        # Configure connection arguments depending on dialect
-        connect_args = {}
-        if db_url.startswith("sqlite"):
-            connect_args["check_same_thread"] = False
-
         _engine = create_async_engine(
             db_url,
             echo=settings.db_echo,
-            connect_args=connect_args,
+            connect_args={"check_same_thread": False},
             pool_pre_ping=True,
         )
     return _engine
