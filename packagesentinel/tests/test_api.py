@@ -1,12 +1,14 @@
 """Tests for FastAPI HTTP routes and frontend API integration."""
 
 import asyncio
+from datetime import datetime, timezone
 from uuid import uuid4
 import pytest
 from httpx import AsyncClient
 
 from app.database import repository
 from app.database.connection import get_sessionmaker
+from app.schemas.finding import Finding, Severity
 from app.schemas.package import Ecosystem, PackageRequest
 
 
@@ -145,4 +147,80 @@ async def test_api_report_includes_typosquat_finding(
     assert "requests" in typo_findings[0]["evidence"]
     assert report["analysis_complete"] is False
     assert report["job_status"] == "completed"
+    assert report["detection_flags"] == {
+        "metadata": False,
+        "typosquatting": True,
+    }
     assert report["compatibility_profile"]["stages"]["typosquatting_analysis"] == "completed"
+
+
+@pytest.mark.asyncio
+async def test_api_report_exposes_persisted_metadata_detection_flag(
+    async_client: AsyncClient,
+):
+    async with get_sessionmaker()() as session:
+        package = await repository.get_or_create_package(
+            session,
+            "metadata-flag-package",
+            "pypi",
+        )
+        version = await repository.get_or_create_package_version(
+            session,
+            package.id,
+            "1.0.0",
+        )
+        scan = await repository.create_scan(session, version.id)
+        await repository.save_findings(
+            session,
+            scan.id,
+            [
+                Finding(
+                    rule_id="META-001",
+                    category="suspicious_metadata",
+                    severity=Severity.HIGH,
+                    confidence=0.9,
+                    evidence="Suspicious metadata evidence",
+                    source="metadata_analysis",
+                )
+            ],
+        )
+        await repository.save_scan_results(
+            session,
+            scan_id=scan.id,
+            completed_at=datetime.now(timezone.utc),
+            status="completed",
+            compatibility_profile_json={
+                "stages": {
+                    "static_analysis": "completed",
+                    "metadata_analysis": "completed",
+                    "typosquatting_analysis": "completed",
+                    "behavioral_analysis": "unavailable",
+                    "dependency_analysis": "unavailable",
+                },
+                "applicable_stages": [
+                    "static_analysis",
+                    "metadata_analysis",
+                    "typosquatting_analysis",
+                    "behavioral_analysis",
+                    "dependency_analysis",
+                ],
+                "coverage": 60.0,
+            },
+            analyzer_statuses_json={
+                "metadata_analysis": "completed",
+                "typosquatting_analysis": "completed",
+            },
+            analyzer_errors_json={},
+        )
+        await session.commit()
+        scan_id = scan.id
+
+    response = await async_client.get(f"/api/v1/scans/{scan_id}/report")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["detection_flags"] == {
+        "metadata": True,
+        "typosquatting": False,
+    }
+    assert any(finding["rule_id"] == "META-001" for finding in data["findings"])

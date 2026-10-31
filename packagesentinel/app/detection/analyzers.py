@@ -1,9 +1,10 @@
 """Adapters between the integrated static scanner and PackageSentinel."""
 
-import re
 from enum import Enum
+from importlib import import_module
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+import re
+from typing import Any, Callable, Dict, List, Optional, Sequence
 
 from pydantic import BaseModel, Field
 
@@ -151,8 +152,89 @@ class PackageContentAnalyzer(BaseAnalyzer):
         )
 
 
-class PackageIdentityAnalyzer(BaseAnalyzer):
-    """Run typosquatting checks that do not require downloaded package contents."""
+class PackageMetadataAnalyzer(BaseAnalyzer):
+    """Adapt metadata detection results to the shared analyzer result contract.
+
+    The detection module is expected to expose ``analyze(metadata: dict)``
+    returning shared ``Finding`` objects or mappings accepted by that schema.
+    """
+
+    name = "package_metadata"
+    stage_key = "metadata_analysis"
+    requires_package_contents = True
+
+    def __init__(
+        self,
+        detector: Optional[Callable[[Dict[str, Any]], Sequence[Finding]]] = None,
+    ) -> None:
+        self._detector = detector
+
+    def _get_detector(
+        self,
+    ) -> Optional[Callable[[Dict[str, Any]], Sequence[Finding]]]:
+        if self._detector is not None:
+            return self._detector
+        try:
+            module = import_module("app.detection.metadata")
+        except ModuleNotFoundError as exc:
+            if exc.name == "app.detection.metadata":
+                return None
+            raise
+        detector = getattr(module, "analyze", None)
+        if detector is None:
+            raise AttributeError(
+                "app.detection.metadata must expose analyze(metadata)"
+            )
+        return detector
+
+    @property
+    def is_available(self) -> bool:
+        return self._get_detector() is not None
+
+    async def analyze(
+        self,
+        package: PackageRequest,
+        acquired_package: Optional[AcquiredPackage] = None,
+    ) -> AnalyzerResult:
+        detector = self._get_detector()
+        if detector is None:
+            return AnalyzerResult(
+                analyzer_name=self.name,
+                stage_key=self.stage_key,
+                status=AnalyzerStatus.UNAVAILABLE,
+                error_message="Metadata detection module is not available.",
+            )
+        if acquired_package is None:
+            return AnalyzerResult(
+                analyzer_name=self.name,
+                stage_key=self.stage_key,
+                status=AnalyzerStatus.SKIPPED,
+                error_message="Metadata analysis requires acquired package metadata.",
+            )
+
+        metadata = {
+            **acquired_package.metadata,
+            "name": acquired_package.package_name,
+            "ecosystem": acquired_package.ecosystem,
+            "version": acquired_package.version,
+        }
+        findings = [
+            Finding.model_validate(finding).model_copy(
+                update={"source": self.stage_key}
+            )
+            for finding in detector(metadata)
+        ]
+        return AnalyzerResult(
+            analyzer_name=self.name,
+            stage_key=self.stage_key,
+            status=AnalyzerStatus.COMPLETED,
+            findings=findings,
+            metadata={"metadata_keys": sorted(metadata)},
+        )
+
+
+class PackageTyposquattingAnalyzer(BaseAnalyzer):
+    """Adapt package-name typo detection to the shared analyzer result contract."""
 
     name = "package_typosquatting"
     stage_key = "typosquatting_analysis"
@@ -180,3 +262,6 @@ class PackageIdentityAnalyzer(BaseAnalyzer):
             findings=findings,
             metadata=metadata,
         )
+
+
+PackageIdentityAnalyzer = PackageTyposquattingAnalyzer

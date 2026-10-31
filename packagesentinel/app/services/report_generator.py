@@ -89,6 +89,16 @@ class ReportGenerator:
             compatibility_profile.stages,
             compatibility_profile.applicable_stages,
         )
+        detection_flags = {
+            "metadata": any(
+                "metadata_analysis" in finding.sources
+                for finding in evidence.unique_findings
+            ),
+            "typosquatting": any(
+                "typosquatting_analysis" in finding.sources
+                for finding in evidence.unique_findings
+            ),
+        }
         summary = (
             custom_summary
             if custom_summary and analysis_complete
@@ -107,6 +117,7 @@ class ReportGenerator:
             summary=summary,
             severity_counts=evidence.severity_counts,
             findings=presentation_findings,
+            detection_flags=detection_flags,
             correlations=correlations,
             compatibility_profile=compatibility_profile,
             analyzer_execution_statuses=analyzer_execution_statuses,

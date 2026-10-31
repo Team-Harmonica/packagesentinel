@@ -98,6 +98,10 @@ class ScanReport(BaseModel):
         default_factory=list,
         description="List of all detected individual findings",
     )
+    detection_flags: Dict[str, bool] = Field(
+        default_factory=dict,
+        description="Frontend-friendly positive detection flags for metadata and typosquatting",
+    )
     correlations: List[CorrelationResult] = Field(
         default_factory=list,
         description="Correlated multi-stage security behaviors detected",

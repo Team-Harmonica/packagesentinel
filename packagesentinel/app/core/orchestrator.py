@@ -20,7 +20,8 @@ from app.detection.analyzers import (
     AnalyzerStatus,
     BaseAnalyzer,
     PackageContentAnalyzer,
-    PackageIdentityAnalyzer,
+    PackageMetadataAnalyzer,
+    PackageTyposquattingAnalyzer,
 )
 from app.schemas.finding import Finding
 from app.schemas.package import PackageInfo, PackageRequest
@@ -53,7 +54,11 @@ class ScanOrchestrator:
         self.analyzers = (
             analyzers
             if analyzers is not None
-            else [PackageIdentityAnalyzer(), PackageContentAnalyzer()]
+            else [
+                PackageMetadataAnalyzer(),
+                PackageTyposquattingAnalyzer(),
+                PackageContentAnalyzer(),
+            ]
         )
         self.correlation_engine = correlation_engine or CorrelationEngine()
         self.profile_generator = profile_generator or CompatibilityProfileGenerator()
