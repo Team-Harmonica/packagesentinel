@@ -15,28 +15,16 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from app.schemas.package import PackageRequest
 
 
-class AcquisitionError(Exception):
-    """Base class for failures that prevent package acquisition."""
-
-
-class PackageNotFoundError(AcquisitionError):
-    """The requested package does not exist in the selected registry."""
-
-
-class VersionNotFoundError(AcquisitionError):
-    """The package exists, but the exact requested version does not."""
-
-
-class RegistryError(AcquisitionError):
-    """A registry request failed or returned an unusable response."""
-
-
-class ArchiveValidationError(AcquisitionError):
-    """The downloaded archive failed validation."""
-
-
-class ExtractionError(AcquisitionError):
-    """The validated archive could not be safely extracted."""
+# Defined in errors.py (stdlib only) so the zero-dependency scanner path can use
+# them; re-exported here so existing imports keep working.
+from app.acquisition.errors import (  # noqa: E402
+    AcquisitionError,
+    ArchiveValidationError,
+    ExtractionError,
+    PackageNotFoundError,
+    RegistryError,
+    VersionNotFoundError,
+)
 
 
 class SkippedFile(BaseModel):

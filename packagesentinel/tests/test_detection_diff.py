@@ -143,9 +143,21 @@ class Cli(unittest.TestCase):
         code, out = run_cli(OLD, NEW, "--json")
         self.assertEqual(json.loads(out)["new"]["band"], "malicious")
 
-    def test_by_name_needs_resolver_version_param(self):
-        # resolve(pkg, ecosystem) in this repo has no `version` yet: clear message, exit 2
-        self.assertEqual(run_cli("left-pad", "1.3.0", "1.3.1")[0], 2)
+    def test_by_name_diff_through_mocked_npm_registry(self):
+        # resolve(pkg, ecosystem, version) fetches each exact version; registry is faked, no network
+        from tests.acquisition_fixtures import FakeRegistry, npm_routes, tgz_from_dir
+        registry = FakeRegistry(npm_routes("update-demo", {"1.0.0": tgz_from_dir(OLD), "1.0.1": tgz_from_dir(NEW)}))
+        with registry.active():
+            code, out = run_cli("update-demo", "1.0.0", "1.0.1")
+        self.assertEqual(code, 1)
+        self.assertIn("clean at 1.0.0 → malicious at 1.0.1", out)
+        self.assertIn("new dependency flatmap-stream", out)
+
+    def test_by_name_unknown_version_exits_2(self):
+        from tests.acquisition_fixtures import FakeRegistry, npm_routes, tgz_from_dir
+        registry = FakeRegistry(npm_routes("update-demo", {"1.0.0": tgz_from_dir(OLD)}))
+        with registry.active():
+            self.assertEqual(run_cli("update-demo", "1.0.0", "9.9.9")[0], 2)
 
 
 if __name__ == "__main__":

@@ -280,16 +280,25 @@ def compare(old_dir: Path, old_meta: dict, new_dir: Path, new_meta: dict) -> dic
     return result
 
 
+def _diff_loaded(old_args: tuple, new_args: tuple) -> dict:
+    from .resolver import cleanup
+    old_dir, old_meta = load(*old_args)
+    try:
+        new_dir, new_meta = load(*new_args)
+        try:
+            return compare(old_dir, old_meta, new_dir, new_meta)
+        finally:
+            cleanup(new_meta)  # temp dirs from archives / registry fetches
+    finally:
+        cleanup(old_meta)
+
+
 def diff_dirs(old: str | Path, new: str | Path, ecosystem: str = "npm") -> dict:
-    old_dir, old_meta = load(str(old), ecosystem)
-    new_dir, new_meta = load(str(new), ecosystem)
-    return compare(old_dir, old_meta, new_dir, new_meta)
+    return _diff_loaded((str(old), ecosystem), (str(new), ecosystem))
 
 
 def diff_versions(pkg: str, old: str, new: str, ecosystem: str = "npm") -> dict:
-    old_dir, old_meta = load(pkg, ecosystem, version=old)
-    new_dir, new_meta = load(pkg, ecosystem, version=new)
-    return compare(old_dir, old_meta, new_dir, new_meta)
+    return _diff_loaded((pkg, ecosystem, old), (pkg, ecosystem, new))
 
 
 # --- CLI ---------------------------------------------------------------------

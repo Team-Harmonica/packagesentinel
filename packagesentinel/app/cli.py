@@ -11,7 +11,7 @@ import json
 import sys
 
 from .detection import glassworm
-from .detection.resolver import resolve
+from .detection.resolver import cleanup, resolve
 from .detection.scanner import run_scanner
 from .detection.scoring import build_verdict
 
@@ -53,7 +53,10 @@ def cmd_check(args) -> int:
     except Exception as exc:
         print(f"packagesentinel: {exc}", file=sys.stderr)
         return 2
-    verdict = build_verdict(meta, run_scanner(pkg_dir, meta))
+    try:
+        verdict = build_verdict(meta, run_scanner(pkg_dir, meta))
+    finally:
+        cleanup(meta)  # removes the temp dir of an extracted archive / registry fetch
     if args.json:
         print(json.dumps(verdict, indent=2, ensure_ascii=False))
     else:
@@ -67,7 +70,10 @@ def cmd_reveal(args) -> int:
     except Exception as exc:
         print(f"packagesentinel: {exc}", file=sys.stderr)
         return 2
-    hits = glassworm.reveal(pkg_dir)
+    try:
+        hits = glassworm.reveal(pkg_dir)
+    finally:
+        cleanup(_meta)
     if args.json:
         print(json.dumps(hits, indent=2, ensure_ascii=False))
         return 0

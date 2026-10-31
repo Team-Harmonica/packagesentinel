@@ -1,25 +1,30 @@
-"""Shared package acquisition contracts."""
+"""Package acquisition: contracts, safe archive extraction, npm and PyPI fetchers.
 
-from app.acquisition.contracts import (
-    AcquiredPackage,
-    AcquisitionError,
-    ArchiveValidationError,
-    ExtractionError,
-    PackageAcquirer,
-    PackageNotFoundError,
-    RegistryError,
-    SkippedFile,
-    VersionNotFoundError,
-)
+Exports are loaded lazily (PEP 562) so that importing a stdlib-only submodule,
+e.g. ``app.acquisition.archive`` from the zero-dependency scanner, does not
+import pydantic via ``contracts``. ``from app.acquisition import X`` still works.
+"""
 
-__all__ = [
-    "AcquiredPackage",
+_CONTRACTS = {"AcquiredPackage", "PackageAcquirer", "SkippedFile"}
+_ERRORS = {
     "AcquisitionError",
     "ArchiveValidationError",
     "ExtractionError",
-    "PackageAcquirer",
     "PackageNotFoundError",
     "RegistryError",
-    "SkippedFile",
     "VersionNotFoundError",
-]
+}
+
+__all__ = sorted(_CONTRACTS | _ERRORS)
+
+
+def __getattr__(name: str):
+    if name in _ERRORS:
+        from app.acquisition import errors
+
+        return getattr(errors, name)
+    if name in _CONTRACTS:
+        from app.acquisition import contracts
+
+        return getattr(contracts, name)
+    raise AttributeError(f"module 'app.acquisition' has no attribute {name!r}")
