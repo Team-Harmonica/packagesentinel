@@ -40,7 +40,8 @@ def test_standardized_report_generation():
 
     profile = CompatibilityProfile(
         stages={"static_analysis": "completed", "metadata_analysis": "completed"},
-        coverage=50.0,
+        applicable_stages=["static_analysis", "metadata_analysis"],
+        coverage=100.0,
     )
 
     statuses = {"static_analysis": "completed", "metadata_analysis": "completed"}
@@ -65,6 +66,44 @@ def test_standardized_report_generation():
     assert report.severity_counts["critical"] == 1
     assert len(report.findings) == 1
     assert len(report.correlations) == 1
-    assert report.compatibility_profile.coverage == 50.0
+    assert report.compatibility_profile.coverage == 100.0
     assert report.analysis_complete is True
+    assert report.job_status == "completed"
     assert "completed" in report.summary
+
+
+def test_report_uses_profile_coverage_and_marks_unavailable_analysis_incomplete():
+    package = PackageInfo(name="test-package", ecosystem="npm", version="1.0.0")
+    profile = CompatibilityProfile(
+        stages={
+            "static_analysis": "completed",
+            "metadata_analysis": "unavailable",
+        },
+        applicable_stages=["static_analysis", "metadata_analysis"],
+        coverage=100.0,
+    )
+
+    report = ReportGenerator().generate_report(
+        scan_id=uuid4(),
+        package=package,
+        evidence=aggregate_evidence([]),
+        correlations=[],
+        compatibility_profile=profile,
+        analyzer_execution_statuses={
+            "static_analysis": "completed",
+            "metadata_analysis": "unavailable",
+            "acquisition": "completed",
+        },
+        analyzer_errors={"metadata_analysis": "Metadata analyzer is not implemented."},
+        created_at=datetime.now(timezone.utc),
+        completed_at=datetime.now(timezone.utc),
+        custom_summary="Analysis completed with no findings.",
+    )
+
+    assert report.job_status == "completed"
+    assert report.analysis_complete is False
+    assert report.compatibility_profile.coverage == 50.0
+    assert report.compatibility_profile.stages["metadata_analysis"] == "unavailable"
+    assert "incomplete" in report.summary.lower()
+    assert "no findings" not in report.summary.lower()
+    assert report.analyzer_errors["metadata_analysis"]

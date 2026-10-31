@@ -14,7 +14,11 @@ scans acquired packages for suspicious code, invisible-Unicode payloads, and
 steganographic content in images. npm and PyPI acquisition uses exact-version
 registry requests and safe archive extraction. The scanner reads package files
 as data and does not execute them. Reports record acquisition failures and mark
-static analysis as skipped rather than implying that a package is safe.
+static analysis as skipped rather than implying that a package is safe. Reports
+track static, metadata, typosquatting, behavioral, and dependency analysis
+separately. Coverage counts completed applicable stages; unavailable or skipped
+stages reduce coverage. A scan job can complete while `analysis_complete` is
+false when one or more applicable stages did not complete.
 
 The scanner includes an offline typosquatting signal for names one edit or
 adjacent transposition away from a curated set of popular npm/PyPI packages,

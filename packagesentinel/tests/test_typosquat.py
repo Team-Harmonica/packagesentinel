@@ -101,9 +101,9 @@ class TyposquatDetectorTests(unittest.IsolatedAsyncioTestCase):
         result = await PackageIdentityAnalyzer().analyze(request)
 
         self.assertEqual(result.status.value, "completed")
-        self.assertEqual(result.stage_key, "metadata_analysis")
+        self.assertEqual(result.stage_key, "typosquatting_analysis")
         self.assertEqual(len(result.findings), 1)
-        self.assertEqual(result.findings[0].source, "metadata_analysis")
+        self.assertEqual(result.findings[0].source, "typosquatting_analysis")
 
 
 if __name__ == "__main__":

@@ -18,7 +18,8 @@ class AnalyzerStatus(str, Enum):
     COMPLETED = "completed"
     FAILED = "failed"
     SKIPPED = "skipped"
-    NOT_AVAILABLE = "not_available"
+    UNAVAILABLE = "unavailable"
+    NOT_AVAILABLE = "unavailable"
 
 
 class AnalyzerResult(BaseModel):
@@ -151,10 +152,10 @@ class PackageContentAnalyzer(BaseAnalyzer):
 
 
 class PackageIdentityAnalyzer(BaseAnalyzer):
-    """Run package-name checks that do not require downloaded package contents."""
+    """Run typosquatting checks that do not require downloaded package contents."""
 
-    name = "package_identity"
-    stage_key = "metadata_analysis"
+    name = "package_typosquatting"
+    stage_key = "typosquatting_analysis"
 
     async def analyze(
         self,

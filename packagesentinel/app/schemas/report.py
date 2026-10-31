@@ -1,11 +1,19 @@
 """Scan report schemas and structured intelligence findings."""
 
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Dict, List, Literal, Optional
 from uuid import UUID
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from app.schemas.finding import Finding, Severity
 from app.schemas.package import PackageInfo
+
+STANDARD_ANALYSIS_STAGES = [
+    "static_analysis",
+    "metadata_analysis",
+    "typosquatting_analysis",
+    "behavioral_analysis",
+    "dependency_analysis",
+]
 
 
 class CorrelationResult(BaseModel):
@@ -38,7 +46,11 @@ class CompatibilityProfile(BaseModel):
 
     stages: Dict[str, str] = Field(
         default_factory=dict,
-        description="Execution status of each analysis stage (completed, failed, not_available, skipped)",
+        description="Execution status of each stage (completed, failed, skipped, unavailable)",
+    )
+    applicable_stages: List[str] = Field(
+        default_factory=lambda: list(STANDARD_ANALYSIS_STAGES),
+        description="Stages included in the coverage and analysis-completion calculation",
     )
     coverage: float = Field(
         ...,
@@ -46,6 +58,21 @@ class CompatibilityProfile(BaseModel):
         le=100.0,
         description="Calculated coverage percentage based on applicable stages",
     )
+
+    @field_validator("stages", mode="before")
+    @classmethod
+    def normalize_legacy_stage_statuses(cls, value: Dict[str, str]) -> Dict[str, str]:
+        if not isinstance(value, dict):
+            return value
+        stages = {
+            stage: "unavailable"
+            for stage in STANDARD_ANALYSIS_STAGES
+        }
+        stages.update({
+            stage: ("unavailable" if status == "not_available" else status)
+            for stage, status in value.items()
+        })
+        return stages
 
 
 class ScanReport(BaseModel):
@@ -91,6 +118,10 @@ class ScanReport(BaseModel):
         ...,
         description="Indicates whether all applicable analysis stages finished without blocking errors",
     )
+    job_status: Literal["completed"] = Field(
+        default="completed",
+        description="Lifecycle status of the scan job; distinct from analysis completeness",
+    )
     created_at: datetime = Field(
         ...,
         description="Timestamp when scan was initiated",
@@ -99,3 +130,13 @@ class ScanReport(BaseModel):
         default=None,
         description="Timestamp when scan completed or terminated",
     )
+
+    @field_validator("analyzer_execution_statuses", mode="before")
+    @classmethod
+    def normalize_legacy_analyzer_statuses(cls, value: Dict[str, str]) -> Dict[str, str]:
+        if not isinstance(value, dict):
+            return value
+        return {
+            stage: ("unavailable" if status == "not_available" else status)
+            for stage, status in value.items()
+        }

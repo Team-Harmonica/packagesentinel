@@ -44,14 +44,18 @@ async def test_orchestrator_acquires_and_analyzes_package_contents(db_session: A
 
     assert acquirer.last_request == request
     assert report.scan_id == scan.id
-    assert report.analysis_complete is True
-    assert report.compatibility_profile.coverage == 50.0
+    assert report.analysis_complete is False
+    assert report.job_status == "completed"
+    assert report.compatibility_profile.coverage == 40.0
     assert report.compatibility_profile.stages["static_analysis"] == "completed"
-    assert report.compatibility_profile.stages["metadata_analysis"] == "completed"
+    assert report.compatibility_profile.stages["metadata_analysis"] == "unavailable"
+    assert report.compatibility_profile.stages["typosquatting_analysis"] == "completed"
+    assert report.compatibility_profile.stages["behavioral_analysis"] == "unavailable"
+    assert report.compatibility_profile.stages["dependency_analysis"] == "unavailable"
     assert report.analyzer_execution_statuses["acquisition"] == "completed"
     assert report.package.archive_hash == acquirer.last_artifact.archive_sha256
     assert report.findings
-    assert "incomplete" not in report.summary.lower()
+    assert "incomplete" in report.summary.lower()
     assert not Path(acquirer.last_artifact.temporary_directory.name).exists()
 
     saved = await repository.get_scan_with_findings(db_session, scan.id)
@@ -135,9 +139,11 @@ async def test_orchestrator_persists_typosquat_finding_during_acquisition(
     )
     report = await ScanOrchestrator().execute_scan(db_session, scan.id, request)
 
-    assert report.analysis_complete is True
-    assert report.compatibility_profile.stages["metadata_analysis"] == "completed"
-    assert report.compatibility_profile.stages["static_analysis"] == "completed"
+    assert report.analysis_complete is False
+    assert report.job_status == "completed"
+    assert report.compatibility_profile.stages["metadata_analysis"] == "unavailable"
+    assert report.compatibility_profile.stages["typosquatting_analysis"] == "completed"
+    assert report.compatibility_profile.coverage == 40.0
     assert len(report.findings) == 1
     assert report.findings[0].category == "typosquatting"
     assert "requests" in report.findings[0].evidence

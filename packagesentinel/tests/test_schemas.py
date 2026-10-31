@@ -112,14 +112,15 @@ def test_scan_report_contract():
         findings=[],
         correlations=[],
         compatibility_profile=CompatibilityProfile(
-            stages={"static_analysis": "not_available"},
+            stages={"static_analysis": "unavailable"},
             coverage=0.0,
         ),
-        analyzer_execution_statuses={"static_analysis": "not_available"},
+        analyzer_execution_statuses={"static_analysis": "unavailable"},
         analysis_complete=False,
         created_at=now,
         completed_at=now,
     )
     assert report.scan_id == scan_id
     assert report.analysis_complete is False
+    assert report.job_status == "completed"
     assert report.compatibility_profile.coverage == 0.0

@@ -1,57 +1,73 @@
-from typing import Dict, List
-from app.detection.analyzers import AnalyzerResult, AnalyzerStatus, BaseAnalyzer
-from app.schemas.report import CompatibilityProfile
+from typing import Dict, List, Sequence
 
-# Standard set of applicable analysis stages for PackageSentinel platform
-STANDARD_APPLICABLE_STAGES: List[str] = [
-    "static_analysis",
-    "metadata_analysis",
-    "behavioral_analysis",
-    "dependency_analysis",
-]
+from app.detection.analyzers import AnalyzerResult, AnalyzerStatus, BaseAnalyzer
+from app.schemas.report import CompatibilityProfile, STANDARD_ANALYSIS_STAGES
+
+
+def calculate_stage_coverage(
+    stages: Dict[str, str],
+    applicable_stages: Sequence[str],
+) -> float:
+    """Return the percentage of applicable stages that completed successfully."""
+    if not applicable_stages:
+        return 0.0
+    completed = sum(
+        stages.get(stage) == AnalyzerStatus.COMPLETED.value
+        for stage in applicable_stages
+    )
+    return round(completed / len(applicable_stages) * 100.0, 1)
+
+
+def analysis_stages_complete(
+    stages: Dict[str, str],
+    applicable_stages: Sequence[str],
+) -> bool:
+    """A scan is fully analyzed only when every applicable stage completed."""
+    return bool(applicable_stages) and all(
+        stages.get(stage) == AnalyzerStatus.COMPLETED.value
+        for stage in applicable_stages
+    )
 
 
 class CompatibilityProfileGenerator:
-    """Generates compatibility profiles reflecting stage availability and test coverage."""
+    """Generate stage statuses and coverage for the configured analysis stages."""
 
     def __init__(self, applicable_stages: List[str] | None = None) -> None:
-        self.applicable_stages = applicable_stages or STANDARD_APPLICABLE_STAGES
+        self.applicable_stages = (
+            list(STANDARD_ANALYSIS_STAGES)
+            if applicable_stages is None
+            else list(applicable_stages)
+        )
 
     def generate(
         self,
         analyzer_results: List[AnalyzerResult],
         all_analyzers: List[BaseAnalyzer] | None = None,
     ) -> CompatibilityProfile:
-        """Calculate dynamic stage statuses and coverage metric.
-
-        Coverage is calculated as:
-            (number of completed stages / total applicable stages) * 100
-        """
+        """Return all known stage statuses and coverage over applicable stages."""
         stages: Dict[str, str] = {}
         for res in analyzer_results:
-            stages[res.stage_key] = res.status.value if hasattr(res.status, "value") else str(res.status)
+            status = res.status.value if hasattr(res.status, "value") else str(res.status)
+            stages[res.stage_key] = (
+                AnalyzerStatus.UNAVAILABLE.value
+                if status == "not_available"
+                else status
+            )
+
         if all_analyzers:
             for analyzer in all_analyzers:
                 if analyzer.stage_key not in stages:
                     if not analyzer.is_available:
-                        stages[analyzer.stage_key] = AnalyzerStatus.NOT_AVAILABLE.value
+                        stages[analyzer.stage_key] = AnalyzerStatus.UNAVAILABLE.value
                     else:
                         stages[analyzer.stage_key] = AnalyzerStatus.SKIPPED.value
 
-        # 3. Ensure all standard applicable stages exist in the dictionary
-        for stage_key in self.applicable_stages:
+        for stage_key in STANDARD_ANALYSIS_STAGES:
             if stage_key not in stages:
-                stages[stage_key] = AnalyzerStatus.NOT_AVAILABLE.value
-
-        # 4. Calculate dynamic coverage
-        total_applicable = len(self.applicable_stages)
-        completed_count = sum(
-            1 for stage in self.applicable_stages if stages.get(stage) == AnalyzerStatus.COMPLETED.value
-        )
-
-        coverage = round((completed_count / total_applicable) * 100.0, 1) if total_applicable > 0 else 0.0
+                stages[stage_key] = AnalyzerStatus.UNAVAILABLE.value
 
         return CompatibilityProfile(
             stages=stages,
-            coverage=coverage,
+            applicable_stages=self.applicable_stages,
+            coverage=calculate_stage_coverage(stages, self.applicable_stages),
         )

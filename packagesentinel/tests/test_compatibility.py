@@ -10,6 +10,7 @@ def test_compatibility_profile_coverage_calculation():
         applicable_stages=[
             "static_analysis",
             "metadata_analysis",
+            "typosquatting_analysis",
             "behavioral_analysis",
             "dependency_analysis",
         ]
@@ -22,36 +23,44 @@ def test_compatibility_profile_coverage_calculation():
             status=AnalyzerStatus.COMPLETED,
         ),
         AnalyzerResult(
-            analyzer_name="metadata_analysis",
-            stage_key="metadata_analysis",
+            analyzer_name="typosquatting",
+            stage_key="typosquatting_analysis",
             status=AnalyzerStatus.COMPLETED,
         ),
         AnalyzerResult(
             analyzer_name="behavioral_analysis",
             stage_key="behavioral_analysis",
-            status=AnalyzerStatus.NOT_AVAILABLE,
+            status=AnalyzerStatus.UNAVAILABLE,
         ),
         AnalyzerResult(
             analyzer_name="dependency_analysis",
             stage_key="dependency_analysis",
-            status=AnalyzerStatus.NOT_AVAILABLE,
+            status=AnalyzerStatus.UNAVAILABLE,
         ),
     ]
 
     profile = generator.generate(results)
 
-    # 2 out of 4 completed = 50.0% coverage
-    assert profile.coverage == 50.0
+    # 2 out of 5 applicable stages completed = 40.0% coverage.
+    assert profile.coverage == 40.0
     assert profile.stages["static_analysis"] == "completed"
-    assert profile.stages["metadata_analysis"] == "completed"
-    assert profile.stages["behavioral_analysis"] == "not_available"
-    assert profile.stages["dependency_analysis"] == "not_available"
+    assert profile.stages["metadata_analysis"] == "unavailable"
+    assert profile.stages["typosquatting_analysis"] == "completed"
+    assert profile.stages["behavioral_analysis"] == "unavailable"
+    assert profile.stages["dependency_analysis"] == "unavailable"
+    assert profile.applicable_stages == generator.applicable_stages
 
 
 def test_coverage_drops_when_stage_fails():
     """Verify failed stages are not counted as completed in coverage metric."""
     generator = CompatibilityProfileGenerator(
-        applicable_stages=["static_analysis", "metadata_analysis", "behavioral_analysis", "dependency_analysis"]
+        applicable_stages=[
+            "static_analysis",
+            "metadata_analysis",
+            "typosquatting_analysis",
+            "behavioral_analysis",
+            "dependency_analysis",
+        ]
     )
 
     results = [
@@ -70,6 +79,13 @@ def test_coverage_drops_when_stage_fails():
 
     profile = generator.generate(results)
 
-    # Only 1 completed out of 4 -> 25.0%
-    assert profile.coverage == 25.0
+    # Only 1 completed out of 5 -> 20.0%.
+    assert profile.coverage == 20.0
     assert profile.stages["static_analysis"] == "failed"
+
+
+def test_empty_applicable_stages_have_zero_coverage():
+    profile = CompatibilityProfileGenerator(applicable_stages=[]).generate([])
+
+    assert profile.coverage == 0.0
+    assert profile.applicable_stages == []

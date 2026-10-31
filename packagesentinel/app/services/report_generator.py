@@ -4,6 +4,10 @@ from datetime import datetime
 from typing import Dict, List, Optional
 from uuid import UUID
 
+from app.core.compatibility import (
+    analysis_stages_complete,
+    calculate_stage_coverage,
+)
 from app.core.evidence import AggregatedEvidence
 from app.schemas.finding import Finding
 from app.schemas.package import PackageInfo
@@ -73,20 +77,28 @@ class ReportGenerator:
                 )
             )
 
-        # Check if all available stages finished successfully
-        analysis_complete = (
-            analyzer_execution_statuses.get("static_analysis") == "completed"
-            and all(
-                status in ("completed", "not_available", "skipped")
-                for status in analyzer_execution_statuses.values()
-            )
+        compatibility_profile = compatibility_profile.model_copy(
+            update={
+                "coverage": calculate_stage_coverage(
+                    compatibility_profile.stages,
+                    compatibility_profile.applicable_stages,
+                )
+            }
         )
-        summary = custom_summary or self.build_summary(
-            package=package,
-            evidence=evidence,
-            correlations=correlations,
-            compatibility_profile=compatibility_profile,
-            analysis_complete=analysis_complete,
+        analysis_complete = analysis_stages_complete(
+            compatibility_profile.stages,
+            compatibility_profile.applicable_stages,
+        )
+        summary = (
+            custom_summary
+            if custom_summary and analysis_complete
+            else self.build_summary(
+                package=package,
+                evidence=evidence,
+                correlations=correlations,
+                compatibility_profile=compatibility_profile,
+                analysis_complete=analysis_complete,
+            )
         )
 
         return ScanReport(
@@ -100,6 +112,7 @@ class ReportGenerator:
             analyzer_execution_statuses=analyzer_execution_statuses,
             analyzer_errors=analyzer_errors or {},
             analysis_complete=analysis_complete,
+            job_status="completed",
             created_at=created_at,
             completed_at=completed_at,
         )

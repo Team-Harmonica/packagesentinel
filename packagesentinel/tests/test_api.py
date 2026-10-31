@@ -101,15 +101,17 @@ async def test_end_to_end_api_submission_and_report_retrieval(async_client: Asyn
     assert report["scan_id"] == scan_id
     assert report["package"]["name"] == "suspicious-sample-tool"
     assert report["package"]["ecosystem"] == "npm"
-    assert report["analysis_complete"] is True
+    assert report["analysis_complete"] is False
+    assert report["job_status"] == "completed"
     assert report["findings"] == []
     assert report["correlations"] == []
     assert "compatibility_profile" in report
-    assert report["compatibility_profile"]["coverage"] == 50.0
+    assert report["compatibility_profile"]["coverage"] == 40.0
     assert report["analyzer_execution_statuses"]["acquisition"] == "completed"
-    assert report["analyzer_execution_statuses"]["metadata_analysis"] == "completed"
+    assert report["analyzer_execution_statuses"]["typosquatting_analysis"] == "completed"
     assert report["analyzer_execution_statuses"]["static_analysis"] == "completed"
-    assert "incomplete" not in report["summary"].lower()
+    assert report["compatibility_profile"]["stages"]["metadata_analysis"] == "unavailable"
+    assert "incomplete" in report["summary"].lower()
     assert "verdict" not in report
     assert "risk_score" not in report
 
@@ -141,4 +143,6 @@ async def test_api_report_includes_typosquat_finding(
     assert len(typo_findings) == 1
     assert typo_findings[0]["severity"] == "medium"
     assert "requests" in typo_findings[0]["evidence"]
-    assert report["analysis_complete"] is True
+    assert report["analysis_complete"] is False
+    assert report["job_status"] == "completed"
+    assert report["compatibility_profile"]["stages"]["typosquatting_analysis"] == "completed"
