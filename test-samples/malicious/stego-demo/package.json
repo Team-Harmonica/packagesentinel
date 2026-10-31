@@ -1,0 +1,7 @@
+{
+  "name": "stego-demo",
+  "version": "1.2.0",
+  "description": "PkgSentinel test fixture (inert). Code hidden after a PNG's IEND chunk.",
+  "main": "index.js",
+  "license": "MIT"
+}

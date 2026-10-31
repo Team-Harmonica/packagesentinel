@@ -1,0 +1,14 @@
+{
+  "name": "update-demo",
+  "version": "1.0.1",
+  "description": "PkgSentinel test fixture: version-diff demo (inert).",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "left-pad": "^1.3.0",
+    "flatmap-stream": "0.1.1"
+  },
+  "scripts": {
+    "postinstall": "node scripts/setup.js"
+  }
+}
