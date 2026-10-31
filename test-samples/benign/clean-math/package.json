@@ -1,0 +1,9 @@
+{
+  "name": "clean-math",
+  "version": "3.4.1",
+  "description": "Harmonica test fixture (benign): normal library code that must not flag.",
+  "main": "index.js",
+  "scripts": { "build": "node scripts/build.js" },
+  "repository": "https://github.com/example/clean-math",
+  "license": "MIT"
+}

@@ -1,0 +1,133 @@
+"""Regenerate test fixtures that contain invisible Unicode.
+
+Everything written here is an INERT fixture. The "malicious" sample copies the
+shape of a GlassWorm loader (hidden payload in an empty-looking string, a
+decoder, an eval), but the hidden payload only prints a message. Never put
+working malware in this repo.
+
+    python tools/make_samples.py
+"""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent / "test-samples"
+
+
+def vs_encode(text: str) -> str:
+    """Bytes -> variation selectors (U+FE00..FE0F for 0..15, U+E0100.. for 16..255)."""
+    return "".join(chr(0xFE00 + b) if b < 16 else chr(0xE0100 + b - 16) for b in text.encode())
+
+
+def tag_encode(text: str) -> str:
+    """ASCII -> Unicode tag characters (U+E0020..E007E)."""
+    return "".join(chr(0xE0000 + ord(c)) for c in text)
+
+
+def zw_encode(text: str) -> str:
+    """Bytes -> zero-width binary (ZWSP = 0, ZWNJ = 1)."""
+    bits = "".join(f"{b:08b}" for b in text.encode())
+    return "".join("‌" if bit == "1" else "​" for bit in bits)
+
+
+def write(path: Path, content: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(content, encoding="utf-8")
+    print(f"wrote {path.relative_to(ROOT.parent)}")
+
+
+def glassworm_demo() -> None:
+    d = ROOT / "malicious" / "glassworm-demo"
+    write(d / "package.json", json.dumps({
+        "name": "glassworm-demo",
+        "version": "1.0.0",
+        "description": "Harmonica test fixture (inert). Mimics a GlassWorm loader.",
+        "main": "index.js",
+        "license": "MIT",
+    }, indent=2) + "\n")
+
+    # The payload references credential paths so code_scan has something to
+    # find once it rescans the decoded text, but all it does is log a string.
+    payload = (
+        'console.log("[harmonica fixture] hidden code ran. A real worm would now read " '
+        '+ require("os").homedir() + "/.ssh/id_rsa and POST it to https://exfil.invalid/");'
+    )
+    write(d / "index.js", (
+        "// HARMONICA TEST FIXTURE: inert. Copies the GlassWorm loader shape.\n"
+        "// The string below looks empty in every editor. It is not.\n"
+        "\n"
+        f'const settings = "{vs_encode(payload)}";\n'
+        "\n"
+        "const s = (v) => [...v].map((c) => {\n"
+        "  const p = c.codePointAt(0);\n"
+        "  return p >= 0xE0100 ? p - 0xE0100 + 16 : p - 0xFE00;\n"
+        "});\n"
+        "\n"
+        "eval(Buffer.from(s(settings)).toString(\"utf8\"));\n"
+        "\n"
+        "module.exports = { ready: true };\n"
+    ))
+
+    # Tag characters hidden at the end of an innocent comment (never executed).
+    write(d / "lib" / "config.py", (
+        "# HARMONICA TEST FIXTURE: inert.\n"
+        f"# default settings{tag_encode('import os; os.system(\"echo harmonica-fixture\")')}\n"
+        "DEBUG = False\n"
+    ))
+
+    # Zero-width binary text in prose: not code, so this should stay low severity.
+    write(d / "README.md", (
+        "# glassworm-demo\n\n"
+        f"Harmonica test fixture.{zw_encode('fixture watermark 42')} Do not install.\n"
+    ))
+
+
+def emoji_utils() -> None:
+    """Benign package full of legitimate invisible codepoints. Must scan clean."""
+    d = ROOT / "benign" / "emoji-utils"
+    write(d / "package.json", json.dumps({
+        "name": "emoji-utils",
+        "version": "2.1.0",
+        "description": "Harmonica test fixture (benign): legit Unicode that must not flag.",
+        "main": "index.js",
+        "license": "MIT",
+    }, indent=2) + "\n")
+
+    write(d / "index.js", (
+        "﻿// Starts with a BOM, which is fine.\n"
+        "const VS16 = 0xfe0f; // emoji presentation selector\n"
+        "const strip = (s) => s.replace(/\\uFE0F/g, \"\");\n"
+        "const root = Function(\"return this\")(); // common globalThis polyfill\n"
+        "\n"
+        "const samples = {\n"
+        '  heart: "❤️",                                  // ❤ + VS16\n'
+        '  family: "\U0001F468‍\U0001F469‍\U0001F467",   // ZWJ sequence\n'
+        '  rainbow: "\U0001F3F3️‍\U0001F308",            // VS16 + ZWJ\n'
+        '  keycap: "1️⃣",\n'
+        '  england: "\U0001F3F4' + tag_encode("gbeng") + '\U000E007F",  // subdivision flag\n'
+        '  kanji: "葛\U000E0100",                               // ideographic variant\n'
+        '  hindi: "क्‍ष",                        // ZWJ in Devanagari\n'
+        '  persian: "می‌خواهم",  // ZWNJ in Persian\n'
+        "};\n"
+        "\n"
+        "module.exports = { samples, strip, VS16, root };\n"
+    ))
+
+    write(d / "icons.css", (
+        "/* icon font glyphs written as literal private-use characters */\n"
+        '.icon-home::before { content: ""; }\n'
+        '.icon-user::before { content: ""; }\n'
+    ))
+
+    write(d / "README.md", (
+        "# emoji-utils\n\n"
+        "Handles emoji like ❤️ and \U0001F468‍\U0001F469‍\U0001F467.\n\n"
+        "Arabic example: ⁧مرحبا⁩ (wrapped in a bidi isolate).\n"
+    ))
+
+
+if __name__ == "__main__":
+    glassworm_demo()
+    emoji_utils()

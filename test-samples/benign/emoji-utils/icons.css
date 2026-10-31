@@ -1,0 +1,3 @@
+/* icon font glyphs written as literal private-use characters */
+.icon-home::before { content: ""; }
+.icon-user::before { content: ""; }

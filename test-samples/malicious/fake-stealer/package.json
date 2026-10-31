@@ -1,0 +1,10 @@
+{
+  "name": "fake-stealer",
+  "version": "0.0.1",
+  "description": "Harmonica test fixture (inert). Copies the shape of an npm credential stealer.",
+  "main": "index.js",
+  "scripts": {
+    "postinstall": "node scripts/setup.js"
+  },
+  "license": "MIT"
+}
