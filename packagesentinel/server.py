@@ -25,7 +25,7 @@ import json
 import re
 from pathlib import Path
 
-from fastapi import FastAPI, Request, UploadFile, File, Form
+from fastapi import FastAPI, Request
 from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -216,11 +216,16 @@ async def health():
 
 
 @app.post("/scan")
-async def scan(file: UploadFile = File(...), ecosystem: str = Form(default="npm")):
-    data = await file.read()
+async def scan(request: Request):
+    kind, fields = await _form_or_json(request)
+    if kind != "form":
+        raise BadRequest("POST /scan takes a multipart file upload (field 'file'); use /scan-name for names")
+    data = fields["file"][1] if "file" in fields else next(
+        (content for filename, content in fields.values() if filename is not None), b"")
     if not data:
-        raise BadRequest("no file uploaded")
-    return await run_in_threadpool(_scan_upload, data, _ecosystem(ecosystem))
+        raise BadRequest("no file uploaded (multipart field 'file')")
+    ecosystem = _ecosystem(fields.get("ecosystem", (None, None))[1])
+    return await run_in_threadpool(_scan_upload, data, ecosystem)
 
 
 @app.post("/scan-name")
