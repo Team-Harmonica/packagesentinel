@@ -134,12 +134,12 @@ h2{font-size:clamp(1.8rem,4.4vw,3.2rem);line-height:1;letter-spacing:-.03em;marg
 </header>
 <main>
   <h1>Something look off?<br>Drop it in.</h1>
-  <p class="lead">Give us the package file, or just type its name and version. We’ll read through it, score it, and tell you straight whether it’s safe to use.</p>
+  <p class="lead">Give us the package file. We’ll read through it without running anything, score it, and tell you straight whether it’s safe to use.</p>
 
   <div class="persp"><div class="panel" id="panel">
-    <label class="drop" id="drop" for="file"><input type="file" id="file"><svg class="box" viewBox="0 0 64 56" aria-hidden="true"><path d="M6 18 32 6l26 12v26L32 52 6 44z" fill="#FB5607" stroke="#1F3A5F" stroke-width="3" stroke-linejoin="round"/><path d="M6 18l26 12 26-12M32 30v22" fill="none" stroke="#1F3A5F" stroke-width="3" stroke-linejoin="round"/></svg><b id="dtitle">Drop your package here</b><span id="dsub">or click to pick a file. Reads the name and version from package.json, .whl, .tgz or .tar.gz.</span><span id="chipbox"></span></label>
-    <div class="go" id="ident"><select id="eco" class="field" aria-label="Ecosystem"><option value="npm">npm</option><option value="pypi">PyPI</option></select><input id="pname" class="field" style="flex:2 1 200px" placeholder="package name (e.g. requests)" maxlength="255" autocomplete="off"><input id="pver" class="field" style="flex:1 1 110px" placeholder="version (e.g. 2.31.0)" maxlength="100" autocomplete="off"></div>
-    <div class="go"><button class="cta" id="up" disabled>Scan it</button><button class="cta ghost" id="stop" disabled>Stop</button><span id="st" aria-live="polite">Pick a file or type a package to get started.</span></div>
+    <label class="drop" id="drop" for="file"><input type="file" id="file"><svg class="box" viewBox="0 0 64 56" aria-hidden="true"><path d="M6 18 32 6l26 12v26L32 52 6 44z" fill="#FB5607" stroke="#1F3A5F" stroke-width="3" stroke-linejoin="round"/><path d="M6 18l26 12 26-12M32 30v22" fill="none" stroke="#1F3A5F" stroke-width="3" stroke-linejoin="round"/></svg><b id="dtitle">Drop your package here</b><span id="dsub">or click to pick a file: .tgz, .tar.gz, .zip or .whl. It is uploaded to your PkgSentinel server and scanned there.</span><span id="chipbox"></span></label>
+    <div class="go" id="ident"><select id="eco" class="field" aria-label="Ecosystem"><option value="npm">npm</option><option value="pypi">PyPI</option></select><span style="color:var(--mute)">Ecosystem (guessed from the file; the scanner reads the package’s own metadata)</span></div>
+    <div class="go"><button class="cta" id="up" disabled>Scan it</button><button class="cta ghost" id="stop" disabled>Stop</button><span id="st" aria-live="polite">Pick a package file to get started.</span></div>
     <div id="prog" hidden><div class="pbar" role="progressbar" aria-valuemin="0" aria-valuemax="100" id="pb"><i id="pfill"></i></div><div class="pmeta"><span id="ppct">0%</span><span id="pmb"></span><span id="peta"></span></div></div>
     <div class="res" id="res" aria-live="polite"></div>
   </div></div>
@@ -155,65 +155,6 @@ h2{font-size:clamp(1.8rem,4.4vw,3.2rem);line-height:1;letter-spacing:-.03em;marg
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>window.SENTINEL_API_URL=window.SENTINEL_API_URL||"http://localhost:8000";</script>
-<script>/* sentinel-api: bundled from api.ts + types.ts */
-"use strict";(()=>{var b=Object.defineProperty;var w=(e,t)=>{for(var r in t)b(e,r,{get:t[r],enumerable:!0})};var a={};var u={};w(u,{API_BASE_URL:()=>d,ApiError:()=>i,createScan:()=>m,getScanReport:()=>f,getScanStatus:()=>y,scanPackage:()=>A,waitForScan:()=>S});var E=["completed","failed"],p=e=>E.includes(e),l=["critical","high","medium","low"];var g,d=typeof window!="undefined"&&window.SENTINEL_API_URL||typeof a!="undefined"&&((g=a.env)==null?void 0:g.VITE_API_URL)||"http://localhost:8000",i=class extends Error{constructor(r,n,o){super(n);this.status=r;this.detail=n;this.body=o;this.name="ApiError"}get isScanInProgress(){return this.status===409}get isNotFound(){return this.status===404}};function _(e){return typeof e=="string"?e:Array.isArray(e)?e.map(t=>`${t.loc.filter(r=>r!=="body").join(".")}: ${t.msg}`).join("; "):"Unexpected error"}async function c(e,t){let r;try{r=await fetch(`${d}${e}`,{...t,headers:{"Content-Type":"application/json",...t==null?void 0:t.headers}})}catch(n){throw n instanceof DOMException&&n.name==="AbortError"?n:new i(0,"Could not reach the server (network or CORS error)")}if(!r.ok){let n;try{n=await r.json()}catch{}throw new i(r.status,_(n==null?void 0:n.detail)||r.statusText,n)}return await r.json()}function m(e,t){return c("/scans",{method:"POST",body:JSON.stringify(e),signal:t})}function y(e,t){return c(`/scans/${encodeURIComponent(e)}`,{signal:t})}function f(e,t){return c(`/scans/${encodeURIComponent(e)}/report`,{signal:t})}function h(e,t){return new Promise((r,n)=>{if(t!=null&&t.aborted)return n(new DOMException("Aborted","AbortError"));let o=setTimeout(r,e);t==null||t.addEventListener("abort",()=>{clearTimeout(o),n(new DOMException("Aborted","AbortError"))},{once:!0})})}async function S(e,{intervalMs:t=2e3,timeoutMs:r=5*6e4,signal:n,onUpdate:o}={}){let R=Date.now()+r;for(;;){let s=await y(e,n);if(o==null||o(s),p(s.status))return s;if(Date.now()+t>R)throw new i(0,"Timed out waiting for the scan to finish");await h(t,n)}}async function A(e,t={}){let{scan_id:r}=await m(e,t.signal);return await S(r,t),f(r,t.signal)}window.SentinelApi={...u,SEVERITY_ORDER:l};})();
-</script>
-<script>
-/* ---------- SentinelEngine: real backend adapter (fills the page's window.SentinelEngine slot) ---------- */
-window.SentinelEngine=(function(){
-  var A=window.SentinelApi,SEV=A.SEVERITY_ORDER,ctrl=null,timer=null;
-  var STEP={queued:[.1,'Queued'],fetching:[.4,'Fetching the package'],analyzing:[.75,'Reading the code'],completed:[1,'Finishing up'],failed:[1,'Failed']};
-  /* ONE place that turns backend severities into this page's rating model. The backend itself gives no score or verdict. */
-  var V={low:0,medium:1,high:2,critical:2};          /* folder tag: 0 Safe, 1 Review, 2 Flagged */
-  var BAR={low:75,medium:50,high:25,critical:10};    /* folder bar fill (cosmetic) */
-  var PEN={low:.3,medium:1,high:2.5,critical:4};     /* rating penalty per finding */
-  var human=function(c){c=String(c).replace(/[_-]+/g,' ').trim();return c.charAt(0).toUpperCase()+c.slice(1)};
-  var bySev=function(a,b){return SEV.indexOf(a.severity)-SEV.indexOf(b.severity)||b.confidence-a.confidence};
-  function toResult(rep){
-    var f=rep.findings,cats={},order=[],mods=[],st=rep.analyzer_execution_statuses||{},er=rep.analyzer_errors||{};
-    f.forEach(function(x){if(!cats[x.category]){cats[x.category]=[];order.push(x.category)}cats[x.category].push(x)});
-    order.forEach(function(k){
-      var items=cats[k].slice().sort(bySev),top=items[0],loc=top.file?' ('+top.file+(top.line?':'+top.line:'')+')':'';
-      mods.push({name:human(k),v:V[top.severity],score:BAR[top.severity],short:top.severity+' severity',
-        note:top.evidence+loc+(items.length>1?' Plus '+(items.length-1)+' more in this category.':''),
-        scoreText:items.length+' finding'+(items.length==1?'':'s')+', highest severity '+top.severity+', top confidence '+Math.round(top.confidence*100)+'%.'});
-    });
-    Object.keys(st).forEach(function(n){
-      if(st[n]==='completed'){
-        if(!f.length)mods.push({name:human(n),v:0,score:100,short:'clean',note:'This check ran and found nothing.',scoreText:'No findings from this check.'});
-        return;
-      }
-      mods.push({name:human(n)+' (did not run)',v:1,score:0,short:'n/a',note:er[n]||('Status: '+st[n]+'.'),
-        scoreText:'No result: this check '+({failed:'failed',not_available:'was not available',skipped:'was skipped'}[st[n]]||st[n])+', so coverage is incomplete.'});
-    });
-    if(!mods.length)mods.push({name:'Checks',v:1,score:0,short:'n/a',note:'No analyzer reported a result.',scoreText:'Nothing ran.'});
-    var crit=f.some(function(x){return x.severity==='critical'}),
-        corrHi=(rep.correlations||[]).some(function(c){return c.severity==='high'||c.severity==='critical'}),
-        medUp=f.some(function(x){return x.severity!=='low'});
-    /* Conservative on purpose: never "safe" while analysis is incomplete or anything medium+ / correlated exists. */
-    var ov=(crit||corrHi)?2:(medUp||(rep.correlations||[]).length||!rep.analysis_complete)?1:0;
-    var pen=0;f.forEach(function(x){pen+=PEN[x.severity]||0});
-    var rating=Math.max(0,10-Math.min(10,pen));
-    if(!rep.analysis_complete)rating=Math.min(rating,6.9);
-    if(ov==2)rating=Math.min(rating,4.9);else if(ov==1)rating=Math.min(rating,7.4);
-    return{mods:mods,rating:Math.round(rating*10)/10,ov:ov,file:rep.package.name,
-      caveat:(rep.analysis_complete?'':'Some checks did not finish, so this result is incomplete and is never rated safe. ')+'The rating is calculated from finding severity and correlated patterns.'};
-  }
-  return{
-    start:function(id,cb){
-      var mine=ctrl=new AbortController(),t0=Date.now(),pr=.05,label='Starting';
-      function tick(){cb.progress(pr,{label:label,elapsed:(Date.now()-t0)/1000})}
-      tick();clearInterval(timer);timer=setInterval(tick,500);
-      A.createScan({ecosystem:id.ecosystem,name:id.name,version:id.version},mine.signal).then(function(s){
-        return A.waitForScan(s.scan_id,{signal:mine.signal,onUpdate:function(u){var x=STEP[u.status]||[pr,u.status];pr=x[0];label=x[1];tick()}})
-          .then(function(){return A.getScanReport(s.scan_id,mine.signal)}); /* a failed scan makes this throw a readable 422 */
-      }).then(function(rep){clearInterval(timer);cb.done(toResult(rep))})
-      .catch(function(e){clearInterval(timer);if(e&&e.name==='AbortError')return;if(cb.error)cb.error(e)});
-    },
-    stop:function(){if(ctrl)ctrl.abort();clearInterval(timer)}
-  };
-})();
-</script>
 <script>
 (function(){
 var $=function(i){return document.getElementById(i)},reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -267,46 +208,35 @@ var pn=$('panel');
 pn.addEventListener('pointermove',function(e){if(reduce)return;var r=pn.getBoundingClientRect();pn.style.transform='rotateY('+(((e.clientX-r.left)/r.width-.5)*6)+'deg) rotateX('+((.5-(e.clientY-r.top)/r.height)*5)+'deg)'});
 pn.addEventListener('pointerleave',function(){pn.style.transform=''});
 
-/* ---------- engine ----------
-   Progress follows file size over speed: CFG.mbPerMin MB per minute.
-   200 MB at 20 MB/min = 10 min, so the bar moves 10% per minute.
-   To use the real backend, set window.SentinelEngine = {start(file,{progress(0..1,info),done(result)}), stop()} */
-var CFG={mbPerMin:20,minSec:6,speed:1};
-var MODS=[['Typosquat check',['Name is unique with a real history.','Name is close to a popular package.','Near-copy of a popular name, published days ago.']],['Install scripts',['No install hooks found.','A hook exists but only does local work.','Hook downloads and runs an encoded script.']],['Credential access',['No token, key or cookie reads.','Reads environment variables with no clear reason.','Reads browser cookies and sends them out.']],['Network behaviour',['No calls to unknown hosts.','One call to a rarely seen host.','Posts data to a raw IP address.']],['Obfuscation',['Readable code throughout.','Some minified blocks, nothing hidden.','Layers of encoded payloads.']],['Maintainer history',['Established publisher, steady releases.','New maintainer taking over.','Brand-new account with one package.']]];
+/* ---------- scan: exactly ONE path ----------
+   The picked file is uploaded as multipart/form-data (fields "file" and "ecosystem")
+   to the local PkgSentinel server's POST /scan, which answers with build_verdict JSON. */
+var API=String(window.SENTINEL_API_URL||'http://localhost:8000').replace(/\/+$/,'');
+var BUILD='direct-upload-scan 2026-11-01';
+document.documentElement.setAttribute('data-build',BUILD);
+console.info('[PkgSentinel] upload page build "'+BUILD+'": scans POST '+API+'/scan as multipart/form-data');
 var NEXT=['Nothing to do here.','Have someone read this part before you use it.','Don’t install it until someone can explain this.'];
-function demoResult(f){var h=0,str=f.name+f.size,i;for(i=0;i<str.length;i++)h=(h*31+str.charCodeAt(i))>>>0;
-  var rng=function(){h=(h*1664525+1013904223)>>>0;return h/4294967296};
-  var mods=MODS.map(function(m){var sc=Math.round(20+rng()*80),v=sc>=75?0:sc>=45?1:2;return{name:m[0],score:sc,v:v,note:m[1][v]}});
-  var avg=mods.reduce(function(a,m){return a+m.score},0)/mods.length,bad=mods.filter(function(m){return m.v==2}).length,rev=mods.filter(function(m){return m.v==1}).length;
-  return{mods:mods,rating:Math.round(avg)/10,ov:bad>=2?2:(bad==1||rev>=3)?1:0,file:f.name}}
-var demo={timer:null,start:function(f,cb){var mb=f.size/1048576,total=Math.max(CFG.minSec,mb/CFG.mbPerMin*60)/CFG.speed,t0=performance.now();
-  demo.timer=setInterval(function(){var pr=Math.min(1,(performance.now()-t0)/1000/total);cb.progress(pr,{mb:mb,total:total});
-    if(pr>=1){clearInterval(demo.timer);cb.done(demoResult(f))}},100)},stop:function(){clearInterval(demo.timer)}};
-var Engine=function(){return window.SentinelEngine||demo};
-
-/* ---------- upload flow ---------- */
-var file=null,working=false,last=0;
-var STEP=['checking the name','reading install scripts','looking for stolen credentials','following network calls','hunting for hidden code','checking who published it'];
-var fmt=function(s){s=Math.max(0,s);return s>=90?(s/60).toFixed(1)+' min':Math.round(s)+' s'};
-function setWorking(w){working=w;$('stop').disabled=!w;$('drop').classList.toggle('dis',w);$('file').disabled=w;['eco','pname','pver'].forEach(function(i){$(i).disabled=w});sync()}
-function ready(){return !!($('pname').value.trim()&&$('pver').value.trim())}
-function sync(){$('up').disabled=working||!ready()}
-function ident(){return{ecosystem:$('eco').value,name:$('pname').value.trim(),version:$('pver').value.trim(),size:0}}
-/* The backend takes {ecosystem,name,version}, not a file, so read those from the file name or package.json. Nothing is uploaded. */
-function identify(f){var n=f.name,m;
-  if(n==='package.json'&&f.size<1048576)return f.text().then(function(t){try{var j=JSON.parse(t);return j.name&&j.version?{ecosystem:'npm',name:String(j.name),version:String(j.version)}:null}catch(e){return null}});
-  if(m=n.match(/^([^-]+)-(\d[^-]*)(?:-[^-]+)*\.whl$/))return Promise.resolve({ecosystem:'pypi',name:m[1],version:m[2]});
-  if(m=n.match(/^(.+)-(\d[^-\/]*)\.tgz$/))return Promise.resolve({ecosystem:'npm',name:m[1],version:m[2]});
-  if(m=n.match(/^(.+)-(\d[^-\/]*)\.(?:tar\.gz|zip)$/))return Promise.resolve({ecosystem:'pypi',name:m[1],version:m[2]});
-  return Promise.resolve(null)}
-function pick(f){if(working||!f)return;file=f;$('dtitle').textContent='Got it.';$('dsub').textContent='Reading the name and version. The file is not uploaded.';
+var MAX_MB=50;
+var file=null,working=false,last=0,ctrl=null,timer=null;
+function setWorking(w){working=w;$('stop').disabled=!w;$('drop').classList.toggle('dis',w);$('file').disabled=w;$('eco').disabled=w;sync()}
+function sync(){$('up').disabled=working||!file}
+/* Ecosystem is only a hint: the server reads package.json / PKG-INFO itself and tries both. */
+function guessEco(n){n=n.toLowerCase();if(/\.tgz$/.test(n))return 'npm';if(/\.(whl|zip|tar\.gz)$/.test(n))return 'pypi';return null}
+function size(b){return b>=1048576?(b/1048576).toFixed(1)+' MB':Math.max(1,Math.round(b/1024))+' KB'}
+function pick(f){if(working||!f)return;file=f;
+  $('dtitle').textContent='Got it.';
+  $('dsub').textContent='This file is uploaded to your PkgSentinel server and scanned there. Nothing in it is run.';
   $('chipbox').innerHTML='<span class="chip"></span>';$('chipbox').firstChild.textContent=f.name;
   $('prog').hidden=true;$('res').className='res';$('modsec').hidden=true;
-  identify(f).then(function(id){
-    if(id){$('eco').value=id.ecosystem;$('pname').value=id.name;$('pver').value=id.version;$('st').textContent='Read '+id.name+' '+id.version+'. Check it, then hit Scan it.'}
-    else{$('st').textContent='Could not read a name and version from that file. Type them in.'}
-    $('dsub').textContent='Only the name and version are used.';sync()})}
-['eco','pname','pver'].forEach(function(i){$(i).addEventListener('input',sync);$(i).addEventListener('change',sync)});
+  var eco=guessEco(f.name);if(eco)$('eco').value=eco;
+  $('st').textContent=f.size>MAX_MB*1048576?'That file is '+size(f.size)+'; the server takes up to '+MAX_MB+' MB.':'Ready: '+f.name+' ('+size(f.size)+'). Hit Scan it.';
+  sync()}
+function errText(res,body){
+  if(body){if(typeof body.error==='string')return body.error;               /* server.py: {"error","kind"} */
+    var d=body.detail;if(typeof d==='string')return d;                       /* FastAPI: {"detail": "..."} */
+    if(Array.isArray(d))return d.map(function(x){return (x.loc||[]).filter(function(p){return p!=='body'}).join('.')+': '+x.msg}).join('; ')}
+  return res.statusText||'no details'}
+function finish(){clearInterval(timer);timer=null;ctrl=null;setWorking(false);$('prog').hidden=true}
 $('file').addEventListener('change',function(e){pick(e.target.files[0])});
 ['dragenter','dragover'].forEach(function(n){$('drop').addEventListener(n,function(e){e.preventDefault();$('drop').classList.add('over')})});
 ['dragleave','drop'].forEach(function(n){$('drop').addEventListener(n,function(e){e.preventDefault();$('drop').classList.remove('over');if(n=='drop')pick(e.dataTransfer.files[0])})});
@@ -322,8 +252,30 @@ $('up').addEventListener('click',function(){
     .then(function(v){$('pfill').style.width='100%';setWorking(false);$('prog').hidden=true;$('st').textContent='All done.';var m=mapVerdict(v);show(m);folders(m);})
     .catch(function(err){setWorking(false);$('prog').hidden=true;$('st').textContent=(err&&err.message)||'Scan failed. Is the server running on :8000?';});
 });
-$('stop').addEventListener('click',function(){Engine().stop();window.dispatchEvent(new CustomEvent('sentinel:stop',{detail:{file:file&&file.name,progress:last}}));
-  setWorking(false);$('st').textContent='Stopped at '+Math.floor(last*100)+'%. The scan may still finish on the server, but no verdict is shown.'});
+$('stop').addEventListener('click',function(){if(ctrl)ctrl.abort()});
+
+/* ---------- final verdict: build_verdict JSON -> {rating 0-10, ov 0/1/2, mods[], caveat} ---------- */
+function _sevRank(s){return s==='malicious'?2:s==='suspicious'?1:0;}
+function _pretty(k){return ({network_exfil:'Network / exfiltration',credential_access:'Credential access',obfuscation:'Obfuscation',dynamic_fetch:'Dynamic code',dangerous_call:'Dangerous calls',glassworm:'Invisible Unicode',stego:'Steganography',typosquat:'Typosquatting',metadata:'Metadata'})[k]||k;}
+function mapVerdict(v){
+  var ov={safe:0,suspicious:1,malicious:2}[v.band];
+  var rating=Math.max(0,Math.min(10,(100-v.score)/10));
+  var g={};
+  (v.findings||[]).forEach(function(f){
+    if(f.check==='capability')return;
+    if(!g[f.check])g[f.check]={name:_pretty(f.check),items:[],worst:'info'};
+    g[f.check].items.push(f);
+    if(_sevRank(f.severity)>_sevRank(g[f.check].worst))g[f.check].worst=f.severity;
+  });
+  var mods=Object.keys(g).map(function(k){
+    var grp=g[k],vv=_sevRank(grp.worst);
+    return{name:grp.name,v:vv,note:grp.items.map(function(f){return f.message;}).join(' '),
+      score:Math.min(100,grp.items.reduce(function(a,f){return a+(f.weight||0);},0)),
+      short:grp.items.length+(grp.items.length===1?' finding':' findings')};
+  });
+  if(!mods.length)mods=[{name:'No issues found',v:0,note:'The scan found nothing suspicious.',score:0,short:'clean'}];
+  return{rating:rating,ov:ov,mods:mods,caveat:v.score>=50?'Do not install this package.':(v.score>=24?'Review this before installing.':null)};
+}
 
 /* ---------- final verdict ---------- */
 
