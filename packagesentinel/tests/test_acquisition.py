@@ -183,6 +183,13 @@ class SafeExtraction(unittest.TestCase):
                 with self.assertRaises(ArchiveValidationError):
                     extract_upload(data, dest=Path(d) / "out")
 
+    def test_gzip_of_nothing_says_empty_not_truncated(self):
+        # what `tar czf x.tgz -C dir missing-name` leaves behind: a 20-byte gzip with no tar inside
+        import gzip
+        with tempfile.TemporaryDirectory() as d, self.assertRaises(ArchiveValidationError) as cm:
+            extract_upload(gzip.compress(b""), dest=Path(d) / "out")
+        self.assertIn("archive is empty", str(cm.exception))
+
     def test_sha256_is_reproducible(self):
         self.assertEqual(sha256_bytes(NPM_TGZ), sha256_bytes(bytes(NPM_TGZ)))
         a = extract_upload(NPM_TGZ, dest=self.dest / "a")[1]["acquisition"]["archive_sha256"]

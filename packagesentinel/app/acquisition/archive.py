@@ -196,6 +196,11 @@ def _extract_tar(data: bytes, gz: bool, w: _Writer) -> None:
                     w.skip(str(rel), f"link to {member.linkname!r} not extracted")
                 else:
                     w.skip(str(rel), "device / FIFO / special file not extracted")
+    except tarfile.ReadError as exc:
+        if str(exc) == "empty file":  # e.g. `tar czf x.tgz` run on a folder name that doesn't exist
+            raise ArchiveValidationError("archive is empty: it contains no files "
+                                         "(check it was created from the right folder)") from exc
+        raise ArchiveValidationError(f"corrupt or truncated tar archive: {exc}") from exc
     except (tarfile.TarError, EOFError, OSError, zlib.error) as exc:
         raise ArchiveValidationError(f"corrupt or truncated tar archive: {exc}") from exc
 

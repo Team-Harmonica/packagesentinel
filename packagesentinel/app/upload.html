@@ -47,6 +47,7 @@ h2{font-size:clamp(1.8rem,4.4vw,3.2rem);line-height:1;letter-spacing:-.03em;marg
 @keyframes hop{to{transform:translateY(-10px) rotate(5deg)}}
 .drop input{position:absolute;opacity:0;width:1px;height:1px}
 .drop b{font-size:1.5rem;letter-spacing:-.01em}.drop span{color:var(--mute)}
+.drop .chip{color:#fff}  /* .drop span would otherwise grey out the file-name chip */
 .drop.dis{opacity:.5;pointer-events:none}
 .chip{display:inline-block;margin-top:.4rem;padding:.3rem 1rem;border-radius:99px;background:linear-gradient(100deg,var(--violet),var(--coral));color:#fff;font-weight:800;animation:chip .8s cubic-bezier(.2,1.6,.4,1) both}
 @keyframes chip{from{opacity:0;transform:translateY(-90px) rotate(-14deg) scale(.6)}}
@@ -120,6 +121,21 @@ h2{font-size:clamp(1.8rem,4.4vw,3.2rem);line-height:1;letter-spacing:-.03em;marg
 @media(max-width:700px){#home{top:auto;bottom:70px}#lg{font-size:.85rem}#lg svg{width:44px}.fgrid{gap:8rem 1rem}}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.fold{opacity:1}}
 .field{font:inherit;font-weight:500;color:var(--fg);background:var(--card);border:2px solid var(--ink);border-radius:14px;padding:.7rem 1rem;min-width:0}.field:disabled{opacity:.5}
+/* mode tabs + compare versions */
+.tabs{display:flex;gap:.6rem;flex-wrap:wrap;margin-top:1.6rem}
+.tabs button{font:800 1rem inherit;font-family:inherit;color:var(--fg);background:var(--card);border:2px solid var(--ink);border-radius:99px;padding:.55rem 1.3rem;cursor:pointer;box-shadow:3px 3px 0 var(--ink)}
+.tabs button[aria-selected="true"]{background:linear-gradient(100deg,var(--violet),var(--coral));color:#fff}
+.pair{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1.2rem}
+.pair .drop{padding:2.2rem 1rem 1.4rem}
+.pair .drop b{font-size:1.25rem}
+.dhead{font-weight:800;font-size:clamp(1.15rem,2.6vw,1.6rem);line-height:1.3;margin:0 0 .8rem;overflow-wrap:anywhere}
+.delta{display:flex;align-items:center;gap:.8rem;flex-wrap:wrap;font-weight:800;font-size:1.3rem}
+.delta .arrow{color:var(--mute)}
+.dsec{margin-top:1.2rem}.dsec h3{margin:0 0 .4rem;font-size:1.15rem}
+.dlist{list-style:none;margin:0;padding:0;display:grid;gap:.5rem}
+.dlist li{background:var(--card);border:2px solid var(--line);border-radius:12px;padding:.55rem .8rem;overflow-wrap:anywhere}
+.dlist li small{display:block;color:var(--mute)}
+.dlist code{font-size:.92em}
 </style>
 </head>
 <body>
@@ -136,6 +152,8 @@ h2{font-size:clamp(1.8rem,4.4vw,3.2rem);line-height:1;letter-spacing:-.03em;marg
   <h1>Something look off?<br>Drop it in.</h1>
   <p class="lead">Give us the package file. We’ll read through it without running anything, score it, and tell you straight whether it’s safe to use.</p>
 
+  <div class="tabs" role="tablist" aria-label="Mode"><button role="tab" id="tabScan" aria-selected="true" aria-controls="scanwrap">Scan one</button><button role="tab" id="tabCmp" aria-selected="false" aria-controls="cmpwrap">Compare versions</button></div>
+  <div id="scanwrap" role="tabpanel" aria-labelledby="tabScan">
   <div class="persp"><div class="panel" id="panel">
     <label class="drop" id="drop" for="file"><input type="file" id="file"><svg class="box" viewBox="0 0 64 56" aria-hidden="true"><path d="M6 18 32 6l26 12v26L32 52 6 44z" fill="#FB5607" stroke="#1F3A5F" stroke-width="3" stroke-linejoin="round"/><path d="M6 18l26 12 26-12M32 30v22" fill="none" stroke="#1F3A5F" stroke-width="3" stroke-linejoin="round"/></svg><b id="dtitle">Drop your package here</b><span id="dsub">or click to pick a file: .tgz, .tar.gz, .zip or .whl. It is uploaded to your PkgSentinel server and scanned there.</span><span id="chipbox"></span></label>
     <div class="go" id="ident"><select id="eco" class="field" aria-label="Ecosystem"><option value="npm">npm</option><option value="pypi">PyPI</option></select><span style="color:var(--mute)">Ecosystem (guessed from the file; the scanner reads the package’s own metadata)</span></div>
@@ -143,6 +161,20 @@ h2{font-size:clamp(1.8rem,4.4vw,3.2rem);line-height:1;letter-spacing:-.03em;marg
     <div id="prog" hidden><div class="pbar" role="progressbar" aria-valuemin="0" aria-valuemax="100" id="pb"><i id="pfill"></i></div><div class="pmeta"><span id="ppct">0%</span><span id="pmb"></span><span id="peta"></span></div></div>
     <div class="res" id="res" aria-live="polite"></div>
   </div></div>
+  </div>
+
+  <div id="cmpwrap" role="tabpanel" aria-labelledby="tabCmp" hidden>
+  <div class="persp"><div class="panel" id="cpanel">
+    <p class="lead" style="margin-bottom:1rem">Drop the version you trust and the update. We scan both and show what the update adds: new findings, new dependencies, new install scripts and new files.</p>
+    <div class="pair">
+      <label class="drop" id="cdropOld" for="cfileOld"><input type="file" id="cfileOld"><b>Old version</b><span id="csubOld">the one you trust (.tgz)</span><span id="cchipOld"></span></label>
+      <label class="drop" id="cdropNew" for="cfileNew"><input type="file" id="cfileNew"><b>New version</b><span id="csubNew">the update (.tgz)</span><span id="cchipNew"></span></label>
+    </div>
+    <div class="go"><button class="cta" id="cgo" disabled>Compare</button><button class="cta ghost" id="cstop" disabled>Stop</button><span id="cst" aria-live="polite">Pick both versions to compare.</span></div>
+    <div id="cprog" hidden><div class="pbar" role="progressbar" aria-valuemin="0" aria-valuemax="100" id="cpb"><i id="cpfill"></i></div><div class="pmeta"><span>Scanning both versions on the server</span><span id="ceta"></span></div></div>
+    <div class="res" id="cres" aria-live="polite"></div>
+  </div></div>
+  </div>
 
   <section id="modsec" hidden>
     <h2>Here’s what each check found</h2>
@@ -212,9 +244,9 @@ pn.addEventListener('pointerleave',function(){pn.style.transform=''});
    The picked file is uploaded as multipart/form-data (fields "file" and "ecosystem")
    to the local PkgSentinel server's POST /scan, which answers with build_verdict JSON. */
 var API=String(window.SENTINEL_API_URL||'http://localhost:8000').replace(/\/+$/,'');
-var BUILD='direct-upload-scan 2026-11-01';
+var BUILD='scan-and-compare 2026-11-01b';
 document.documentElement.setAttribute('data-build',BUILD);
-console.info('[PkgSentinel] upload page build "'+BUILD+'": scans POST '+API+'/scan as multipart/form-data');
+console.info('[PkgSentinel] upload page build "'+BUILD+'": scan = POST '+API+'/scan, compare = POST '+API+'/diff (both multipart/form-data)');
 var NEXT=['Nothing to do here.','Have someone read this part before you use it.','Don’t install it until someone can explain this.'];
 var MAX_MB=50;
 var file=null,working=false,last=0,ctrl=null,timer=null;
@@ -253,6 +285,75 @@ $('up').addEventListener('click',function(){
     .catch(function(err){setWorking(false);$('prog').hidden=true;$('st').textContent=(err&&err.message)||'Scan failed. Is the server running on :8000?';});
 });
 $('stop').addEventListener('click',function(){if(ctrl)ctrl.abort()});
+
+/* ---------- mode tabs: "Scan one" and "Compare versions" keep separate state ---------- */
+function mode(cmp){$('tabScan').setAttribute('aria-selected',!cmp);$('tabCmp').setAttribute('aria-selected',cmp);
+  $('scanwrap').hidden=cmp;$('cmpwrap').hidden=!cmp;
+  $('modsec').hidden=cmp||!$('res').classList.contains('show')}   /* scan folders belong to scan mode */
+$('tabScan').addEventListener('click',function(){mode(false)});$('tabCmp').addEventListener('click',function(){mode(true)});
+
+/* ---------- compare: POST both archives to /diff (multipart fields "old", "new", "ecosystem") ---------- */
+var cfile={old:null,new:null},cworking=false,cctrl=null,ctimer=null;
+function csync(){$('cgo').disabled=cworking||!(cfile.old&&cfile.new);$('cstop').disabled=!cworking}
+function cpick(which,f){if(cworking||!f)return;cfile[which]=f;var W=which==='old'?'Old':'New';
+  $('cchip'+W).innerHTML='<span class="chip"></span>';$('cchip'+W).firstChild.textContent=f.name+' ('+size(f.size)+')';
+  $('cres').className='res';
+  $('cst').textContent=cfile.old&&cfile.new?'Ready. Hit Compare.':'Now pick the '+(cfile.old?'new':'old')+' version.';csync()}
+['old','new'].forEach(function(which){var W=which==='old'?'Old':'New',zone=$('cdrop'+W);
+  $('cfile'+W).addEventListener('change',function(e){cpick(which,e.target.files[0])});
+  ['dragenter','dragover'].forEach(function(n){zone.addEventListener(n,function(e){e.preventDefault();zone.classList.add('over')})});
+  ['dragleave','drop'].forEach(function(n){zone.addEventListener(n,function(e){e.preventDefault();zone.classList.remove('over');if(n=='drop')cpick(which,e.dataTransfer.files[0])})})});
+function cfinish(){clearInterval(ctimer);ctimer=null;cctrl=null;cworking=false;$('cprog').hidden=true;
+  ['cdropOld','cdropNew'].forEach(function(i){$(i).classList.remove('dis')});$('cfileOld').disabled=$('cfileNew').disabled=false;csync()}
+$('cgo').addEventListener('click',function(){
+  if(cworking)return;
+  if(!(cfile.old&&cfile.new)){$('cst').textContent='Pick both versions first.';return}
+  var mine=cctrl=new AbortController(),t0=performance.now();
+  cworking=true;['cdropOld','cdropNew'].forEach(function(i){$(i).classList.add('dis')});$('cfileOld').disabled=$('cfileNew').disabled=true;csync();
+  $('cres').className='res';$('cprog').hidden=false;$('cst').innerHTML='Comparing<span class="dots"></span>';
+  var tick=function(){var s=(performance.now()-t0)/1000;$('cpfill').style.width=92*(1-Math.exp(-s/2.5))+'%';$('ceta').textContent=Math.floor(s)+' s elapsed'};
+  tick();ctimer=setInterval(tick,200);
+  var fd=new FormData();fd.append('old',cfile.old,cfile.old.name);fd.append('new',cfile.new,cfile.new.name);
+  var eco=guessEco(cfile.new.name);if(eco)fd.append('ecosystem',eco);
+  fetch(API+'/diff',{method:'POST',body:fd,signal:mine.signal,cache:'no-store'})   /* browser sets the multipart boundary */
+    .then(function(res){return res.json().catch(function(){return null}).then(function(body){
+      if(!res.ok)throw new Error('Compare failed (HTTP '+res.status+'): '+errText(res,body));
+      if(!body||!body.headline||!body.old||!body.new)throw new Error('The server answered, but not with a version diff.');
+      return body})})
+    .then(function(d){if(cctrl!==mine)return;cfinish();$('cst').textContent='All done.';showDiff(d)})
+    .catch(function(e){if(cctrl!==mine)return;cfinish();
+      if(e&&e.name==='AbortError'){$('cst').textContent='Stopped. No result is shown.';return}
+      $('cst').textContent=e instanceof TypeError?'Could not reach the PkgSentinel server at '+API+'. Is it running? (uvicorn server:app --port 8000)':e.message})
+});
+$('cstop').addEventListener('click',function(){if(cctrl)cctrl.abort()});
+
+var BAND_OV={safe:0,suspicious:1,malicious:2};
+function bandTag(side){var ov=BAND_OV[side.band];ov=ov===undefined?1:ov;
+  return '<span>'+esc(side.version||'?')+' <span class="tag '+vc[ov]+'">'+esc(side.band)+' '+esc(side.score)+'/100</span></span>'}
+function kv(obj){return Object.keys(obj||{}).map(function(k){return [k,obj[k]]})}
+function ft(x){return x&&typeof x==='object'?(x.from||'?')+' → '+(x.to||'?'):String(x)}  /* diff.py: {"from","to"} */
+function section(title,items){return items.length?'<div class="dsec"><h3>'+esc(title)+' ('+items.length+')</h3><ul class="dlist">'+items.join('')+'</ul></div>':''}
+function showDiff(d){
+  var worse=d.new.score>d.old.score,ov=BAND_OV[d.new.band];ov=ov===undefined?1:ov;
+  var added=(d.added_findings||[]).slice().sort(function(a,b){return _sevRank(b.severity)-_sevRank(a.severity)||(b.weight||0)-(a.weight||0)});
+  var findings=added.filter(function(f){return f.check!=='capability'}).map(function(f){var v=_sevRank(f.severity);
+    return '<li><span class="tag '+vc[v]+'">'+vl[v]+'</span> <b>'+esc(_pretty(f.check))+'</b>: '+esc(f.message)+(f.location?'<small>'+esc(f.location)+'</small>':'')+'</li>'});
+  var deps=(d.dependencies||{}),scripts=(d.install_scripts||{}),files=(d.files||{});
+  var depItems=kv(deps.added).map(function(x){return '<li>New dependency <code>'+esc(x[0])+'</code> '+esc(x[1])+'</li>'})
+    .concat(kv(deps.changed).map(function(x){return '<li>Changed <code>'+esc(x[0])+'</code> '+esc(ft(x[1]))+'</li>'}));
+  var scriptItems=kv(scripts.added).map(function(x){return '<li>New <b>'+esc(x[0])+'</b> script: <code>'+esc(x[1])+'</code><small>runs automatically on npm install</small></li>'})
+    .concat(kv(scripts.changed).map(function(x){return '<li>Changed <b>'+esc(x[0])+'</b> script: <code>'+esc(ft(x[1]))+'</code></li>'}));
+  var fileItems=(files.added||[]).map(function(f){return '<li>New file <code>'+esc(f)+'</code></li>'});
+  var removed=(d.removed_findings||[]).filter(function(f){return f.check!=='capability'}).length;
+  $('cres').innerHTML='<div class="vd" style="display:block"><p class="dhead">'+esc(d.headline)+'</p>'+
+    '<div class="delta">'+bandTag(d.old)+'<span class="arrow">→</span>'+bandTag(d.new)+
+    '<span style="color:var(--mute);font-size:1rem;font-weight:500">score '+(worse?'+':'')+(d.new.score-d.old.score)+(d.bump?', '+esc(d.bump)+' release':'')+'</span></div>'+
+    '<p style="margin:.8rem 0 0;color:var(--mute)">Our call on the update: <span class="tag '+vc[ov]+'">'+['Safe to update','Check it first','Don’t update'][ov]+'</span></p></div>'+
+    (findings.length?section('New findings in '+(d.new_version||'the new version'),findings):'<p class="dsec" style="color:var(--mute)">No new findings in the update.</p>')+
+    section('New install scripts',scriptItems)+section('Dependency changes',depItems)+section('New files',fileItems)+
+    (removed?'<p class="dsec" style="color:var(--mute)">'+removed+' finding'+(removed==1?'':'s')+' from the old version '+(removed==1?'is':'are')+' gone in the new one.</p>':'');
+  $('cres').className='res show';requestAnimationFrame(function(){requestAnimationFrame(function(){$('cres').classList.add('in');burst(parseInt(col[ov].slice(1),16))})});
+}
 
 /* ---------- final verdict: build_verdict JSON -> {rating 0-10, ov 0/1/2, mods[], caveat} ---------- */
 function _sevRank(s){return s==='malicious'?2:s==='suspicious'?1:0;}
