@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>pkgSentinels | Upload and analyse by Harmonica</title>
+<title>pkgSentinel | Upload and analyse by Harmonica</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&family=Cinzel:wght@500;800&display=swap">
 <style>
 :root{--bg:#0a0f1f;--fg:#eef2ff;--mute:#a9b8d6;--card:#14203c99;--line:#ffffff2a;--navy:#1F3A5F;--teal:#87A937;--gold:#FB5607;--coral:#FF006E;--violet:#8338EC;--sky:#3A86FF;--tt:#eef2ff;--ink:#6f8cc4;color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -122,7 +122,7 @@ h2{font-size:clamp(1.8rem,4.4vw,3.2rem);line-height:1;letter-spacing:-.03em;marg
 <div class="stage"><i class="blob"></i><i class="blob"></i><i class="blob"></i><i class="blob"></i></div>
 <canvas id="gl" aria-hidden="true"></canvas>
 <header>
-  <span class="pill" id="ttl" aria-label="pkgSentinels">pkgSentinels</span>
+  <span class="pill" id="ttl" aria-label="pkgSentinel">pkgSentinel</span>
   <span class="pill" id="lg"><svg viewBox="0 0 600 212" aria-label="Harmonica logo"><polygon points="8,76 36,30 92,30 92,76" fill="var(--bg)" stroke="#1F3A5F" stroke-width="7" stroke-linejoin="round"/><polygon points="592,76 564,30 508,30 508,76" fill="var(--bg)" stroke="#1F3A5F" stroke-width="7" stroke-linejoin="round"/><rect x="8" y="78" width="584" height="58" rx="8" fill="#1F3A5F"/><rect x="96" y="6" width="408" height="66" rx="24" fill="var(--bg)" stroke="#1F3A5F" stroke-width="8"/><rect x="96" y="142" width="408" height="62" rx="24" fill="var(--bg)" stroke="#1F3A5F" stroke-width="8"/><g id="hr"></g></svg>Harmonica</span>
   <!-- Change href to your main page file name -->
   <a class="pill" id="home" href="index.html">Back to home</a>
@@ -187,7 +187,7 @@ addEventListener('pointermove',function(e){mx=e.clientX/innerWidth*2-1;my=-(e.cl
 function burst(hex){if(!bc)return;pulse=1;bc.setHex(hex)}
 /* title: same two-line lettering as the home page, letters lift under the pointer */
 var chs=[],cx=-100,cy=-100;
-$('ttl').innerHTML='pkgSentinels'.split('').map(function(c){return '<span class="ch" aria-hidden="true">'+c+'</span>'}).join('');
+$('ttl').innerHTML='pkgSentinel'.split('').map(function(c){return '<span class="ch" aria-hidden="true">'+c+'</span>'}).join('');
 [].forEach.call(document.querySelectorAll('.ch'),function(el){chs.push({el:el,hy:0,hs:1})});
 addEventListener('pointermove',function(e){cx=e.clientX;cy=e.clientY});
 (function ld(){requestAnimationFrame(ld);if(reduce)return;chs.forEach(function(c){var r=c.el.getBoundingClientRect(),d=Math.hypot(r.left+r.width/2-cx,r.top+r.height/2-cy),inf=Math.max(0,1-d/150);

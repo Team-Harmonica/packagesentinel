@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>pkgSentinels by Harmonica</title>
+<title>pkgSentinel by Harmonica</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&family=Cinzel:wght@500;800&display=swap">
 <style>
 :root{--bg:#0a0f1f;--fg:#eef2ff;--mute:#a9b8d6;--card:#14203c99;--line:#ffffff2a;--navy:#1F3A5F;--teal:#87A937;--gold:#FB5607;--coral:#FF006E;--violet:#8338EC;--sky:#3A86FF;--tt:#eef2ff;color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -145,7 +145,7 @@ header nav{animation:none}
 </symbol></svg>
 <div class="stage"><i class="blob"></i><i class="blob"></i><i class="blob"></i><i class="blob"></i></div>
 <canvas id="gl" aria-hidden="true"></canvas>
-<h1 id="name">pkgSentinels</h1>
+<h1 id="name">pkgSentinel</h1>
 <div class="ui" id="intro">Something is hiding inside</div>
 <div class="ui" id="hint">Scroll ↓</div>
 <div class="ui" id="sub">Flag malicious npm and PyPI packages, without the false alarms.</div>
@@ -382,7 +382,7 @@ $('run').addEventListener('click',function(){
 });
 /* ---------- title letters: fly out of the blast, then lift under the pointer ---------- */
 var chs=[];
-$('name').innerHTML='pkgSentinels'.split('').map(function(c){return '<span class="ch">'+c+'</span>'}).join('');
+$('name').innerHTML='pkgSentinel'.split('').map(function(c){return '<span class="ch">'+c+'</span>'}).join('');
 document.querySelectorAll('.ch').forEach(function(el){chs.push({el:el,a:Math.random()*6.283,r:350+Math.random()*700,rot:(Math.random()-.5)*720})});
 function ldraw(){
   requestAnimationFrame(ldraw);
