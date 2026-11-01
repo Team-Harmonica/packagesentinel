@@ -3,12 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Upload and analyse | Package Sentinels by Harmonica</title>
+<title>pkgSentinels | Upload and analyse by Harmonica</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&family=Cinzel:wght@500;800&display=swap">
 <style>
-:root{--bg:#eef2ff;--fg:#14213d;--mute:#4b5d7e;--card:#ffffffb8;--line:#1F3A5F2e;--navy:#1F3A5F;--teal:#87A937;--gold:#FB5607;--coral:#FF006E;--violet:#8338EC;--sky:#3A86FF;--tt:#8338EC;--ink:#1F3A5F;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0a0f1f;--fg:#eef2ff;--mute:#a9b8d6;--card:#14203c99;--line:#ffffff2a;--tt:#eef2ff;--ink:#6f8cc4;color-scheme:dark}}
-:root[data-theme="dark"]{--tt:#eef2ff;--ink:#6f8cc4;--bg:#0a0f1f;--fg:#eef2ff;--mute:#a9b8d6;--card:#14203c99;--line:#ffffff2a;color-scheme:dark}
+:root{--bg:#0a0f1f;--fg:#eef2ff;--mute:#a9b8d6;--card:#14203c99;--line:#ffffff2a;--navy:#1F3A5F;--teal:#87A937;--gold:#FB5607;--coral:#FF006E;--violet:#8338EC;--sky:#3A86FF;--tt:#eef2ff;--ink:#6f8cc4;color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 *,*::before,*::after{box-sizing:inherit}
 html,body{margin:0;background:var(--bg);color:var(--fg);font:500 1.1rem/1.6 "Bricolage Grotesque","Helvetica Neue",Arial,sans-serif;overflow-x:hidden}
@@ -18,20 +16,18 @@ html,body{margin:0;background:var(--bg);color:var(--fg);font:500 1.1rem/1.6 "Bri
 .blob:nth-child(2){width:45vmax;height:45vmax;right:-12%;top:5%;background:var(--sky);animation-delay:-5s}
 .blob:nth-child(3){width:55vmax;height:55vmax;left:25%;bottom:-30%;background:var(--gold);animation-delay:-9s}
 .blob:nth-child(4){width:35vmax;height:35vmax;left:50%;top:30%;background:var(--violet);opacity:.3;animation-delay:-2s}
-:root[data-theme="dark"] .blob{opacity:.13}
+.stage .blob{opacity:.13}
 @keyframes fl{to{transform:translate(8vw,6vh) scale(1.2)}}
-#gl{position:fixed;inset:0;width:100%;height:100%;z-index:1;pointer-events:none;opacity:.5}
-:root[data-theme="dark"] #gl{opacity:.42}
+#gl{position:fixed;inset:0;width:100%;height:100%;z-index:1;pointer-events:none;opacity:.42}
 @keyframes bob{50%{transform:translateY(-9px)}}
 header{position:fixed;inset:0;z-index:11;pointer-events:none}
 .pill{position:fixed;right:18px;pointer-events:auto;background:var(--card);backdrop-filter:blur(12px);border:1px solid var(--line);border-radius:99px;padding:.45rem 1rem;color:var(--fg);text-decoration:none;font:800 .95rem inherit;font-family:inherit;cursor:pointer;animation:bob 5s ease-in-out infinite}
 .pill:hover{background:var(--coral);color:#fff}
 #lg{top:calc(16px + env(safe-area-inset-top,0px));display:flex;align-items:center;gap:.6rem;animation-duration:6s}
 #lg svg{width:56px;height:auto}
-#ttl,#ttl:hover{left:18px;right:auto;top:calc(14px + env(safe-area-inset-top,0px));font:800 clamp(1.05rem,3.2vw,1.45rem)/1.05 Cinzel,Georgia,serif;letter-spacing:.06em;text-align:center;color:var(--tt);background:var(--card);border:2px solid var(--line);padding:.55rem 1.3rem;animation-duration:7s;cursor:default}
+#ttl,#ttl:hover{left:18px;right:auto;top:calc(14px + env(safe-area-inset-top,0px));font:800 clamp(.8rem,2.4vw,1.05rem)/1 Cinzel,Georgia,serif;letter-spacing:.04em;white-space:nowrap;color:var(--tt);background:var(--card);border:1px solid var(--line);padding:.3rem .75rem;animation-duration:7s;cursor:default}
 .ch{display:inline-block;will-change:transform}
 #home{top:calc(72px + env(safe-area-inset-top,0px));animation-delay:-1.3s}
-#th{bottom:calc(18px + env(safe-area-inset-bottom,0px));animation-delay:-2s}
 main{position:relative;z-index:5;max-width:1100px;margin:0 auto;padding:6rem 1.3rem 4rem}
 h1{font:800 clamp(2.3rem,7vw,5.2rem)/1 Cinzel,Georgia,serif;letter-spacing:.04em;margin:0 0 1rem}
 h2{font-size:clamp(1.8rem,4.4vw,3.2rem);line-height:1;letter-spacing:-.03em;margin:0 0 .6rem}
@@ -126,11 +122,10 @@ h2{font-size:clamp(1.8rem,4.4vw,3.2rem);line-height:1;letter-spacing:-.03em;marg
 <div class="stage"><i class="blob"></i><i class="blob"></i><i class="blob"></i><i class="blob"></i></div>
 <canvas id="gl" aria-hidden="true"></canvas>
 <header>
-  <span class="pill" id="ttl" aria-label="Package Sentinels">PACKAGE<br>SENTINELS</span>
+  <span class="pill" id="ttl" aria-label="pkgSentinels">pkgSentinels</span>
   <span class="pill" id="lg"><svg viewBox="0 0 600 212" aria-label="Harmonica logo"><polygon points="8,76 36,30 92,30 92,76" fill="var(--bg)" stroke="#1F3A5F" stroke-width="7" stroke-linejoin="round"/><polygon points="592,76 564,30 508,30 508,76" fill="var(--bg)" stroke="#1F3A5F" stroke-width="7" stroke-linejoin="round"/><rect x="8" y="78" width="584" height="58" rx="8" fill="#1F3A5F"/><rect x="96" y="6" width="408" height="66" rx="24" fill="var(--bg)" stroke="#1F3A5F" stroke-width="8"/><rect x="96" y="142" width="408" height="62" rx="24" fill="var(--bg)" stroke="#1F3A5F" stroke-width="8"/><g id="hr"></g></svg>Harmonica</span>
   <!-- Change href to your main page file name -->
   <a class="pill" id="home" href="index.html">Back to home</a>
-  <button class="pill" id="th" aria-label="Switch light and dark mode">Night</button>
 </header>
 <main>
   <h1>Something look off?<br>Drop it in.</h1>
@@ -158,7 +153,6 @@ h2{font-size:clamp(1.8rem,4.4vw,3.2rem);line-height:1;letter-spacing:-.03em;marg
 <script>
 (function(){
 var $=function(i){return document.getElementById(i)},reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
-var dark=matchMedia('(prefers-color-scheme: dark)').matches,root_=document.documentElement;
 var col=['#87A937','#FB5607','#FF006E'],vl=['Safe','Review','Flagged'],vc=['safe','rev','bad'];
 var RC=['#3A86FF','#3A86FF','#87A937','#87A937','#FB5607','#FB5607','#87A937','#87A937','#3A86FF','#87A937'];
 $('hr').innerHTML=RC.map(function(c,i){return '<rect x="'+(76+i*46)+'" y="90" width="34" height="34" fill="'+c+'"/>'}).join('');
@@ -191,13 +185,9 @@ function frame(){requestAnimationFrame(frame);if(!T)return;t+=.016*(reduce?.15:1
 frame();
 addEventListener('pointermove',function(e){mx=e.clientX/innerWidth*2-1;my=-(e.clientY/innerHeight*2-1)});
 function burst(hex){if(!bc)return;pulse=1;bc.setHex(hex)}
-function theme(d){dark=d;root_.dataset.theme=d?'dark':'light';$('th').textContent=d?'Day':'Night'}
-$('th').addEventListener('click',function(){theme(!dark)});theme(dark);
-
-
 /* title: same two-line lettering as the home page, letters lift under the pointer */
 var chs=[],cx=-100,cy=-100;
-$('ttl').innerHTML=['PACKAGE','SENTINELS'].map(function(w){return w.split('').map(function(c){return '<span class="ch" aria-hidden="true">'+c+'</span>'}).join('')}).join('<br>');
+$('ttl').innerHTML='pkgSentinels'.split('').map(function(c){return '<span class="ch" aria-hidden="true">'+c+'</span>'}).join('');
 [].forEach.call(document.querySelectorAll('.ch'),function(el){chs.push({el:el,hy:0,hs:1})});
 addEventListener('pointermove',function(e){cx=e.clientX;cy=e.clientY});
 (function ld(){requestAnimationFrame(ld);if(reduce)return;chs.forEach(function(c){var r=c.el.getBoundingClientRect(),d=Math.hypot(r.left+r.width/2-cx,r.top+r.height/2-cy),inf=Math.max(0,1-d/150);

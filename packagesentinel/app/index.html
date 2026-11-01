@@ -3,12 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Package Sentinels by Harmonica</title>
+<title>pkgSentinels by Harmonica</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&family=Cinzel:wght@500;800&display=swap">
 <style>
-:root{--bg:#eef2ff;--fg:#14213d;--mute:#4b5d7e;--card:#ffffffb8;--line:#1F3A5F2e;--navy:#1F3A5F;--teal:#87A937;--gold:#FB5607;--coral:#FF006E;--violet:#8338EC;--sky:#3A86FF;--tt:#8338EC;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0a0f1f;--fg:#eef2ff;--mute:#a9b8d6;--card:#14203c99;--line:#ffffff2a;--tt:#eef2ff;color-scheme:dark}}
-:root[data-theme="dark"]{--bg:#0a0f1f;--fg:#eef2ff;--mute:#a9b8d6;--card:#14203c99;--line:#ffffff2a;--tt:#eef2ff;color-scheme:dark}
+:root{--bg:#0a0f1f;--fg:#eef2ff;--mute:#a9b8d6;--card:#14203c99;--line:#ffffff2a;--navy:#1F3A5F;--teal:#87A937;--gold:#FB5607;--coral:#FF006E;--violet:#8338EC;--sky:#3A86FF;--tt:#eef2ff;color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 *,*::before,*::after{box-sizing:inherit}
 html,body{margin:0;background:var(--bg);color:var(--fg);font:500 1.1rem/1.6 "Bricolage Grotesque","Helvetica Neue",Arial,sans-serif;overflow-x:hidden}
@@ -18,7 +16,7 @@ html,body{margin:0;background:var(--bg);color:var(--fg);font:500 1.1rem/1.6 "Bri
 .blob:nth-child(2){width:45vmax;height:45vmax;right:-12%;top:5%;background:var(--sky);animation-delay:-5s}
 .blob:nth-child(3){width:55vmax;height:55vmax;left:25%;bottom:-30%;background:var(--gold);animation-delay:-9s}
 .blob:nth-child(4){width:35vmax;height:35vmax;left:50%;top:30%;background:var(--violet);opacity:.35;animation-delay:-2s}
-:root[data-theme="dark"] .blob{opacity:.28}
+.stage .blob{opacity:.28}
 @keyframes fl{to{transform:translate(8vw,6vh) scale(1.2)}}
 #gl{position:fixed;inset:0;width:100%;height:100%;z-index:1;pointer-events:none}
 #name{position:fixed;left:0;right:0;top:50%;z-index:2;margin:0;text-align:center;font:800 clamp(1.7rem,7.4vw,6.5rem)/1.05 Cinzel,Georgia,serif;letter-spacing:.12em;opacity:0;pointer-events:none;background:linear-gradient(100deg,var(--tt) 0%,var(--tt) 42%,var(--gold) 50%,var(--tt) 58%,var(--tt) 100%);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:sh 7s linear infinite;filter:drop-shadow(0 6px 24px #FB560744)}
@@ -35,7 +33,6 @@ header nav{display:flex;gap:1.2rem;align-items:center}
 header a{color:var(--mute);text-decoration:none;font-size:.95rem}
 header a:hover{color:var(--coral)}
 #bar{position:absolute;left:0;bottom:-1px;height:4px;width:100%;background:linear-gradient(90deg,var(--teal),var(--gold),var(--coral),var(--violet));transform:scaleX(0);transform-origin:left}
-#th{font:800 .9rem inherit;font-family:inherit;border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:99px;padding:.35rem .9rem;cursor:pointer}
 #scroll{height:450vh}
 main{position:relative;z-index:5}
 .wrap{max-width:1100px;margin:0 auto;padding:6rem 1.3rem}
@@ -83,7 +80,7 @@ footer h2{font-size:clamp(2rem,7vw,5.5rem)}
 footer p{color:var(--mute)}
 @media(max-width:700px){header nav a{display:none}.row{grid-template-columns:1fr auto}.row small{grid-column:1/-1;order:3}.row .eco{display:none}}
 @media(prefers-reduced-motion:reduce){.blob,.marq div,#name{animation:none}}
-#name{background:none;-webkit-background-clip:border-box;background-clip:border-box;color:var(--tt);animation:none;filter:none!important;font-size:clamp(2.2rem,10vw,8.5rem);letter-spacing:.06em;text-shadow:0 0 40px var(--bg),0 0 14px var(--bg)}
+#name{background:none;-webkit-background-clip:border-box;background-clip:border-box;color:var(--tt);animation:none;filter:none!important;font-size:clamp(2.2rem,10vw,8.5rem);letter-spacing:.06em;white-space:nowrap;text-shadow:0 0 40px var(--bg),0 0 14px var(--bg)}
 .ch{display:inline-block;will-change:transform}
 
 /* floating header */
@@ -91,21 +88,20 @@ header{position:fixed;inset:0;display:block;padding:0;background:none;border:0;b
 header .lg{position:fixed;right:18px;top:calc(16px + env(safe-area-inset-top,0px));pointer-events:auto;background:var(--card);backdrop-filter:blur(12px);border:1px solid var(--line);border-radius:99px;padding:.35rem 1rem .35rem .7rem;animation:bob 6s ease-in-out infinite}
 header nav{position:fixed;right:18px;top:50%;display:flex;flex-direction:column;align-items:flex-end;gap:.8rem;transform:translateY(-50%)}
 header nav a{pointer-events:auto;background:var(--card);backdrop-filter:blur(12px);border:1px solid var(--line);border-radius:99px;padding:.45rem 1rem;color:var(--fg);animation:bob 5s ease-in-out infinite}
-header nav a:nth-child(2){animation-delay:-1.3s}header nav a:nth-child(3){animation-delay:-2.6s}header nav a:nth-child(4){animation-delay:-3.9s}
+header nav a:nth-child(2){animation-delay:-1.3s}header nav a:nth-child(3){animation-delay:-2.6s}
 header nav a:hover{background:var(--coral);color:#fff}
-#th{position:fixed;right:18px;bottom:calc(18px + env(safe-area-inset-bottom,0px));pointer-events:auto;animation:bob 5.5s ease-in-out infinite;animation-delay:-2s}
 #bar{position:fixed;left:50%;bottom:calc(22px + env(safe-area-inset-bottom,0px));width:min(260px,46vw);height:8px;margin-left:calc(min(260px,46vw) / -2);border-radius:99px;background:var(--card);border:1px solid var(--line);backdrop-filter:blur(8px);transform:none;overflow:hidden;animation:bob 6.5s ease-in-out infinite}
 #bar::after{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(90deg,var(--sky),var(--violet),var(--coral),var(--gold));transform:scaleX(var(--pg,0));transform-origin:left}
 @keyframes bob{50%{transform:translateY(-9px)}}
 header nav{animation:none}
 #bar{display:none!important}
-#name::before{content:"";position:absolute;inset:-.22em -.6em;z-index:-1;border-radius:999px;background:var(--card);border:2px solid var(--line);backdrop-filter:blur(12px);opacity:var(--pk,0)}
+#name::before{content:"";position:absolute;inset:-.12em -.35em;z-index:-1;border-radius:999px;background:var(--card);border:1px solid var(--line);backdrop-filter:blur(12px);opacity:var(--pk,0)}
 /* title + background */
 #name{background:none;-webkit-background-clip:border-box;background-clip:border-box;color:var(--tt);top:env(safe-area-inset-top,0px);left:0;right:auto;width:max-content;text-align:center;transform-origin:0 0;z-index:12;text-shadow:0 0 40px var(--bg),0 0 14px var(--bg)}
 .blob{opacity:.4;transition:opacity 1.6s}
 .stage.after .blob{opacity:.2;animation:fl 14s ease-in-out infinite alternate,hue 26s linear infinite}
-:root[data-theme="dark"] .blob{opacity:.22}
-:root[data-theme="dark"] .stage.after .blob{opacity:.12}
+.stage .blob{opacity:.22}
+.stage.after .blob{opacity:.12}
 @keyframes hue{to{filter:blur(70px) hue-rotate(360deg)}}
 /* upload demo */
 .drop{display:grid;place-items:center;gap:.3rem;text-align:center;padding:2.4rem 1rem;border:2px dashed var(--violet);border-radius:20px;cursor:pointer;transition:background .2s,transform .2s}
@@ -149,14 +145,14 @@ header nav{animation:none}
 </symbol></svg>
 <div class="stage"><i class="blob"></i><i class="blob"></i><i class="blob"></i><i class="blob"></i></div>
 <canvas id="gl" aria-hidden="true"></canvas>
-<h1 id="name">PACKAGE<br>SENTINELS</h1>
+<h1 id="name">pkgSentinels</h1>
 <div class="ui" id="intro">Something is hiding inside</div>
 <div class="ui" id="hint">Scroll ↓</div>
 <div class="ui" id="sub">Flag malicious npm and PyPI packages, without the false alarms.</div>
 <div id="flash"></div>
 <header>
   <span class="lg"><svg viewBox="0 0 600 212" aria-label="Harmonica logo"><use href="#hm"/><g id="hr"></g></svg>Harmonica</span>
-  <nav><a href="upload.html">Scan a package</a><a href="#play">Play the logo</a><a href="#faq">Questions</a><button id="th" aria-label="Switch light and dark mode">Night</button></nav>
+  <nav><a href="upload.html">Scan a package</a><a href="#play">Play the logo</a><a href="#faq">Questions</a></nav>
   <div id="bar"></div>
 </header>
 <div id="scroll"></div>
@@ -217,7 +213,6 @@ header nav{animation:none}
 (function(){
 var $=function(i){return document.getElementById(i)};
 var reduce=matchMedia('(prefers-reduced-motion: reduce)').matches,hasG=!!window.gsap;
-var root_=document.documentElement,dark=matchMedia('(prefers-color-scheme: dark)').matches;
 var RC=['#3A86FF','#3A86FF','#87A937','#87A937','#FB5607','#FB5607','#87A937','#87A937','#3A86FF','#87A937'];
 var F=[261.6,293.7,329.6,392,440,523.3,587.3,659.3,784,880],ac=null;
 function reeds(id,live){var h='';RC.forEach(function(c,i){h+='<rect class="reed" '+(live?'tabindex="0" role="button" aria-label="Reed '+(i+1)+'"':'')+' data-i="'+i+'" x="'+(76+i*46)+'" y="90" width="34" height="34" fill="'+c+'"/>'});$(id).innerHTML=h}
@@ -237,10 +232,8 @@ var tw=[['Credential stealers','#87A937'],['Typosquats','#FF006E'],['Hidden payl
 function fill(id){var h='';for(var k=0;k<4;k++)tw.forEach(function(t){h+='<span class="pill" style="background:'+t[1]+(t[1]=='#FB5607'?';color:#241a00':'')+'">'+t[0]+'</span>'});$(id).innerHTML=h}
 fill('t1');fill('t2');
 
-/* theme */
+/* scene details */
 var dust,edgeM;
-function theme(d){dark=d;root_.dataset.theme=d?'dark':'light';$('th').textContent=d?'Day':'Night';if(dust)dust.material.color.set(d?0xffd27a:0x8338EC);if(edgeM)edgeM.color.set(d?0xffffff:0x14213d)}
-$('th').addEventListener('click',function(){theme(!dark)});
 
 /* ---------- 3D (scroll-driven horse blast) ---------- */
 var scene,cam,renderer,bits=[],cubes=[],glow,fl,ring,sg,sp,sv,sm,N=300,root,mx=0,my=0,sy=0,camZ=14;
@@ -300,8 +293,6 @@ try{
   function resize(){var w=innerWidth,h=innerHeight,a=w/h;renderer.setSize(w,h);cam.aspect=a;cam.updateProjectionMatrix();camZ=14*Math.max(1,1.8/a)}
   addEventListener('resize',resize);resize();
 }catch(e){ok=false}
-theme(dark);
-
 var HEROS=3.5;
 function onScroll(){sy=scrollY;tp=reduce?1:Math.min(1,scrollY/(HEROS*innerHeight));
   var h=document.documentElement.scrollHeight-innerHeight;$('bar').style.setProperty('--pg',h>0?scrollY/h:0)}
@@ -391,7 +382,7 @@ $('run').addEventListener('click',function(){
 });
 /* ---------- title letters: fly out of the blast, then lift under the pointer ---------- */
 var chs=[];
-$('name').innerHTML=['PACKAGE','SENTINELS'].map(function(w){return w.split('').map(function(c){return '<span class="ch">'+c+'</span>'}).join('')}).join('<br>');
+$('name').innerHTML='pkgSentinels'.split('').map(function(c){return '<span class="ch">'+c+'</span>'}).join('');
 document.querySelectorAll('.ch').forEach(function(el){chs.push({el:el,a:Math.random()*6.283,r:350+Math.random()*700,rot:(Math.random()-.5)*720})});
 function ldraw(){
   requestAnimationFrame(ldraw);
