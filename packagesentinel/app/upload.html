@@ -242,30 +242,44 @@ $('file').addEventListener('change',function(e){pick(e.target.files[0])});
 ['dragleave','drop'].forEach(function(n){$('drop').addEventListener(n,function(e){e.preventDefault();$('drop').classList.remove('over');if(n=='drop')pick(e.dataTransfer.files[0])})});
 $('up').addEventListener('click',function(){
   if(working)return;
-  if(!file){$('st').textContent='Pick or drop a package file first.';return}
-  var mine=ctrl=new AbortController(),t0=performance.now();
-  setWorking(true);last=0;$('res').className='res';$('modsec').hidden=true;$('prog').hidden=false;
-  $('st').innerHTML='Uploading and scanning '+esc(file.name)+'<span class="dots"></span>';
-  (function tick(){var s=(performance.now()-t0)/1000;last=.92*(1-Math.exp(-s/2.5));         /* honest: indeterminate, never reaches 100% */
-    $('pfill').style.width=last*100+'%';$('pb').setAttribute('aria-valuenow',Math.floor(last*100));
-    $('ppct').textContent='';$('pmb').textContent='Static scan on the server';$('peta').textContent=Math.floor(s)+' s elapsed'})();
-  timer=setInterval(function(){if(ctrl===mine){var s=(performance.now()-t0)/1000;last=.92*(1-Math.exp(-s/2.5));$('pfill').style.width=last*100+'%';$('peta').textContent=Math.floor(s)+' s elapsed'}},200);
-  var fd=new FormData();fd.append('file',file,file.name);fd.append('ecosystem',$('eco').value||'npm');
-  fetch(API+'/scan',{method:'POST',body:fd,signal:mine.signal,cache:'no-store'})   /* no Content-Type header: the browser sets the multipart boundary */
-    .then(function(res){return res.json().catch(function(){return null}).then(function(body){
-      if(!res.ok)throw new Error('Scan failed (HTTP '+res.status+'): '+errText(res,body));
-      if(!body||typeof body.score!=='number'||!body.band)throw new Error('The server answered, but not with a verdict.');
-      return body})})
-    .then(function(v){if(ctrl!==mine)return;finish();
-      $('st').textContent='All done: '+(v.package||file.name)+(v.version?' '+v.version:'')+' scored '+v.score+'/100 ('+v.band+').';
-      show(mapVerdict(v))})
-    .catch(function(e){if(ctrl!==mine)return;finish();
-      if(e&&e.name==='AbortError'){$('st').textContent='Stopped. No verdict is shown.';return}
-      $('st').textContent=e instanceof TypeError?'Could not reach the PkgSentinel server at '+API+'. Is it running? (uvicorn server:app --port 8000)':e.message})
+  if(typeof file==='undefined'||!file){$('st').textContent='Pick or drop a package file first.';return;}
+  setWorking(true);last=0;$('res').className='res';$('modsec').hidden=true;$('prog').hidden=false;$('pfill').style.width='25%';
+  $('st').innerHTML='Scanning<span class="dots"></span>';
+  var fd=new FormData();fd.append('file',file);fd.append('ecosystem',$('eco').value||'npm');
+  var base=(typeof window!=='undefined'&&window.SENTINEL_API_URL)||'http://localhost:8000';
+  fetch(base+'/scan',{method:'POST',body:fd})
+    .then(function(res){if(!res.ok)return res.json().then(function(e){throw new Error((e&&e.detail)||res.statusText);},function(){throw new Error('HTTP '+res.status);});return res.json();})
+    .then(function(v){$('pfill').style.width='100%';setWorking(false);$('prog').hidden=true;$('st').textContent='All done.';var m=mapVerdict(v);show(m);folders(m);})
+    .catch(function(err){setWorking(false);$('prog').hidden=true;$('st').textContent=(err&&err.message)||'Scan failed. Is the server running on :8000?';});
 });
 $('stop').addEventListener('click',function(){if(ctrl)ctrl.abort()});
 
 /* ---------- final verdict: build_verdict JSON -> {rating 0-10, ov 0/1/2, mods[], caveat} ---------- */
+function _sevRank(s){return s==='malicious'?2:s==='suspicious'?1:0;}
+function _pretty(k){return ({network_exfil:'Network / exfiltration',credential_access:'Credential access',obfuscation:'Obfuscation',dynamic_fetch:'Dynamic code',dangerous_call:'Dangerous calls',glassworm:'Invisible Unicode',stego:'Steganography',typosquat:'Typosquatting',metadata:'Metadata'})[k]||k;}
+function mapVerdict(v){
+  var ov={safe:0,suspicious:1,malicious:2}[v.band];
+  var rating=Math.max(0,Math.min(10,(100-v.score)/10));
+  var g={};
+  (v.findings||[]).forEach(function(f){
+    if(f.check==='capability')return;
+    if(!g[f.check])g[f.check]={name:_pretty(f.check),items:[],worst:'info'};
+    g[f.check].items.push(f);
+    if(_sevRank(f.severity)>_sevRank(g[f.check].worst))g[f.check].worst=f.severity;
+  });
+  var mods=Object.keys(g).map(function(k){
+    var grp=g[k],vv=_sevRank(grp.worst);
+    return{name:grp.name,v:vv,note:grp.items.map(function(f){return f.message;}).join(' '),
+      score:Math.min(100,grp.items.reduce(function(a,f){return a+(f.weight||0);},0)),
+      short:grp.items.length+(grp.items.length===1?' finding':' findings')};
+  });
+  if(!mods.length)mods=[{name:'No issues found',v:0,note:'The scan found nothing suspicious.',score:0,short:'clean'}];
+  return{rating:rating,ov:ov,mods:mods,caveat:v.score>=50?'Do not install this package.':(v.score>=24?'Review this before installing.':null)};
+}
+
+/* ---------- final verdict ---------- */
+
+/* ---------- real backend adapter (added) ---------- */
 function _sevRank(s){return s==='malicious'?2:s==='suspicious'?1:0;}
 function _pretty(k){return ({network_exfil:'Network / exfiltration',credential_access:'Credential access',obfuscation:'Obfuscation',dynamic_fetch:'Dynamic code',dangerous_call:'Dangerous calls',glassworm:'Invisible Unicode',stego:'Steganography',typosquat:'Typosquatting',metadata:'Metadata'})[k]||k;}
 function mapVerdict(v){
